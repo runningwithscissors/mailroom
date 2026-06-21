@@ -1,0 +1,13 @@
+{
+  "name": "bisondigital/mailroom",
+  "description": "Transactional email delivery, logging, retry, and diagnostics for ExpressionEngine.",
+  "type": "expressionengine-addon",
+  "require": {
+    "php": ">=8.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "BisonDigital\\Mailroom\\": "src/"
+    }
+  }
+}
