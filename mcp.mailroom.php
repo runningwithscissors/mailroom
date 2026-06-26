@@ -5,9 +5,21 @@ if (! defined('BASEPATH')) {
 }
 
 require_once __DIR__ . '/ControlPanel/Sidebar.php';
+require_once __DIR__ . '/src/DTO/EmailMessage.php';
+require_once __DIR__ . '/src/DTO/SendResult.php';
+require_once __DIR__ . '/src/DTO/ValidationResult.php';
 require_once __DIR__ . '/src/Services/LogService.php';
+require_once __DIR__ . '/src/Services/MailerService.php';
 require_once __DIR__ . '/src/Services/SettingsService.php';
+require_once __DIR__ . '/src/Services/TransportFactory.php';
 require_once __DIR__ . '/src/Services/TransportRepository.php';
+require_once __DIR__ . '/src/Services/Auth/OAuthClient.php';
+require_once __DIR__ . '/src/Services/Auth/TokenStore.php';
+require_once __DIR__ . '/src/Transports/TransportInterface.php';
+require_once __DIR__ . '/src/Transports/AbstractTransport.php';
+require_once __DIR__ . '/src/Transports/SmtpTransport.php';
+require_once __DIR__ . '/src/Transports/MailpitTransport.php';
+require_once __DIR__ . '/src/Transports/MicrosoftGraphTransport.php';
 
 class Mailroom_mcp
 {
@@ -230,6 +242,93 @@ class Mailroom_mcp
         ];
     }
 
+    public function microsoft_graph(): array
+    {
+        $this->renderSidebar('transports');
+
+        $repository = new \BisonDigital\Mailroom\Services\TransportRepository();
+        $repository->seedDefaults();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $current = $repository->settingsFor('microsoft_graph');
+            $clientSecret = (string) ee()->input->post('client_secret');
+
+            $settings = [
+                'tenant_id' => (string) ee()->input->post('tenant_id'),
+                'client_id' => (string) ee()->input->post('client_id'),
+                'client_secret' => $clientSecret !== '' ? $clientSecret : (string) ($current['client_secret'] ?? ''),
+                'sender' => (string) ee()->input->post('sender'),
+                'save_to_sent_items' => ee()->input->post('save_to_sent_items') ? 'y' : 'n',
+                'test_recipient' => (string) ee()->input->post('test_recipient'),
+            ];
+
+            $repository->updateSettings('microsoft_graph', $settings);
+
+            if ($this->graphCredentialsChanged($current, $settings)) {
+                (new \BisonDigital\Mailroom\Services\Auth\TokenStore())->clear(
+                    'microsoft_graph',
+                    $repository->idFor('microsoft_graph')
+                );
+            }
+
+            if ((string) ee()->input->post('mailroom_action') === 'test') {
+                $recipient = trim((string) ee()->input->post('test_recipient'));
+
+                if ($recipient === '' || ! filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+                    ee('CP/Alert')->makeInline('mailroom-graph-test')
+                        ->asIssue()
+                        ->withTitle(lang('mailroom_graph_test_failed'))
+                        ->addToBody(lang('mailroom_graph_test_recipient_required'))
+                        ->defer();
+                } else {
+                    $result = (new \BisonDigital\Mailroom\Services\MailerService())->send([
+                        'to' => [$recipient],
+                        'from' => (string) ee()->input->post('sender'),
+                        'from_name' => lang('mailroom_module_name'),
+                        'subject' => lang('mailroom_graph_test_subject'),
+                        'text' => lang('mailroom_graph_test_body'),
+                        'source' => 'mailroom_cp',
+                        'metadata' => ['source_label' => 'Microsoft Graph Test'],
+                    ], 'microsoft_graph');
+
+                    $alert = ee('CP/Alert')->makeInline('mailroom-graph-test');
+
+                    if ($result->success) {
+                        $alert->asSuccess()
+                            ->withTitle(lang('mailroom_graph_test_sent'))
+                            ->addToBody($result->providerResponse !== '' ? $result->providerResponse : lang('mailroom_graph_test_sent_desc'))
+                            ->defer();
+                    } else {
+                        $alert->asIssue()
+                            ->withTitle(lang('mailroom_graph_test_failed'))
+                            ->addToBody($this->safeDiagnostic($result->errorMessage, $result->diagnosticMessage))
+                            ->defer();
+                    }
+                }
+            } else {
+                ee('CP/Alert')->makeInline('mailroom-graph-saved')
+                    ->asSuccess()
+                    ->withTitle(lang('mailroom_graph_saved'))
+                    ->defer();
+            }
+
+            ee()->functions->redirect(ee('CP/URL')->make('addons/settings/mailroom/microsoft_graph'));
+        }
+
+        return [
+            'heading' => lang('mailroom_graph_settings'),
+            'breadcrumb' => [
+                ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
+                $this->baseUrl => lang('mailroom_module_name'),
+                ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
+            ],
+            'body' => ee('View')->make('mailroom:transports/microsoft_graph')->render([
+                'action_url' => ee('CP/URL')->make('addons/settings/mailroom/microsoft_graph'),
+                'settings' => $repository->settingsFor('microsoft_graph'),
+            ]),
+        ];
+    }
+
     public function settings(): array
     {
         $this->renderSidebar('settings');
@@ -307,5 +406,25 @@ class Mailroom_mcp
     private function renderSidebar(string $active): void
     {
         (new \BisonDigital\Mailroom\ControlPanel\Sidebar())->render($active);
+    }
+
+    private function safeDiagnostic(string $errorMessage, string $diagnosticMessage): string
+    {
+        $message = trim($errorMessage . ($diagnosticMessage !== '' ? "\n" . $diagnosticMessage : ''));
+        $message = preg_replace('/Bearer\s+[A-Za-z0-9._~+\/=-]+/i', 'Bearer [redacted]', $message) ?? $message;
+        $message = preg_replace('/(client_secret=)[^&\s]+/i', '$1[redacted]', $message) ?? $message;
+
+        return $message !== '' ? $message : lang('mailroom_graph_test_failed_desc');
+    }
+
+    private function graphCredentialsChanged(array $current, array $settings): bool
+    {
+        foreach (['tenant_id', 'client_id', 'client_secret', 'sender'] as $key) {
+            if ((string) ($current[$key] ?? '') !== (string) ($settings[$key] ?? '')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

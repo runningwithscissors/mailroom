@@ -23,16 +23,17 @@ class MailerService
         $message = $payload instanceof EmailMessage ? $payload : EmailMessage::fromArray($payload);
         $message = $this->applyDefaults($this->applyDevMode($message));
         $devMode = (string) $this->settings->get('dev_mode', 'normal');
+        $explicitTransport = $transportHandle !== '';
         $transportHandle = $transportHandle !== '' ? $transportHandle : (string) $this->settings->get('default_transport', '');
 
-        if ($devMode === 'suppress') {
+        if (! $explicitTransport && $devMode === 'suppress') {
             $result = SendResult::captured('mailroom', 'Email suppressed by Mailroom dev mode.');
             $this->log($message, $transportHandle, $result);
 
             return $result;
         }
 
-        if ($devMode === 'capture') {
+        if (! $explicitTransport && $devMode === 'capture') {
             $transportHandle = 'mailpit';
         }
 

@@ -96,6 +96,23 @@ $lang = [
     'mailroom_mailpit_tls' => 'Use TLS',
     'mailroom_mailpit_username' => 'Mailpit Username',
     'mailroom_mailpit_password' => 'Mailpit Password',
+    'mailroom_graph_settings' => 'Microsoft 365 Graph Settings',
+    'mailroom_graph_saved' => 'Microsoft Graph Settings Saved',
+    'mailroom_graph_tenant_id' => 'Tenant ID',
+    'mailroom_graph_client_id' => 'Client ID',
+    'mailroom_graph_client_secret' => 'Client Secret',
+    'mailroom_graph_sender' => 'Sender Mailbox',
+    'mailroom_graph_sender_desc' => 'The mailbox or UPN used with Microsoft Graph /users/{sender}/sendMail.',
+    'mailroom_graph_save_to_sent' => 'Save test and transactional messages to Sent Items',
+    'mailroom_graph_test_recipient' => 'Test Recipient',
+    'mailroom_send_test' => 'Send Test Email',
+    'mailroom_graph_test_subject' => 'Mailroom Microsoft Graph test',
+    'mailroom_graph_test_body' => 'This is a Microsoft Graph test email sent by Mailroom.',
+    'mailroom_graph_test_sent' => 'Microsoft Graph Test Sent',
+    'mailroom_graph_test_sent_desc' => 'Microsoft Graph accepted the message for delivery.',
+    'mailroom_graph_test_failed' => 'Microsoft Graph Test Failed',
+    'mailroom_graph_test_failed_desc' => 'Microsoft Graph returned an error.',
+    'mailroom_graph_test_recipient_required' => 'Enter a valid test recipient before sending a test email.',
 ];
 
 return $lang;

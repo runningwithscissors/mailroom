@@ -3,6 +3,7 @@
 namespace BisonDigital\Mailroom\Services;
 
 use BisonDigital\Mailroom\Transports\MailpitTransport;
+use BisonDigital\Mailroom\Transports\MicrosoftGraphTransport;
 use BisonDigital\Mailroom\Transports\SmtpTransport;
 use BisonDigital\Mailroom\Transports\TransportInterface;
 use InvalidArgumentException;
@@ -28,6 +29,7 @@ class TransportFactory
         return match ((string) ($transport['provider'] ?? $handle)) {
             'smtp' => new SmtpTransport($settings),
             'dev_capture' => new MailpitTransport($settings),
+            'microsoft_graph' => new MicrosoftGraphTransport($settings, (int) ($transport['id'] ?? 0)),
             default => throw new InvalidArgumentException('Mailroom transport provider is unsupported: ' . (string) ($transport['provider'] ?? '')),
         };
     }

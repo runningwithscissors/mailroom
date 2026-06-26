@@ -49,6 +49,8 @@
                                     <a class="button button--small" href="<?=ee('CP/URL')->make('addons/settings/mailroom/smtp')?>"><?=lang('mailroom_manage')?></a>
                                 <?php elseif ($handle === 'mailpit'): ?>
                                     <a class="button button--small" href="<?=ee('CP/URL')->make('addons/settings/mailroom/dev_capture')?>"><?=lang('mailroom_manage')?></a>
+                                <?php elseif ($handle === 'microsoft_graph'): ?>
+                                    <a class="button button--small" href="<?=ee('CP/URL')->make('addons/settings/mailroom/microsoft_graph')?>"><?=lang('mailroom_manage')?></a>
                                 <?php endif; ?>
                             </td>
                         </tr>

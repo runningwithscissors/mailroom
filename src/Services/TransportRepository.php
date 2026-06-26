@@ -56,6 +56,7 @@ class TransportRepository
 
         $this->ensureTransport('smtp', 'Generic SMTP', 'smtp');
         $this->ensureTransport('mailpit', 'Mailpit / Dev Capture', 'dev_capture');
+        $this->ensureTransport('microsoft_graph', 'Microsoft 365 Graph', 'microsoft_graph');
     }
 
     public function updateState(string $handle, bool $enabled, bool $default): void
@@ -142,6 +143,13 @@ class TransportRepository
                 'settings_json' => json_encode($settings),
                 'updated_at' => $this->now(),
             ]);
+    }
+
+    public function idFor(string $handle): int
+    {
+        $transport = $this->findByHandle($handle);
+
+        return (int) ($transport['id'] ?? 0);
     }
 
     private function ensureTransport(string $handle, string $name, string $provider): void

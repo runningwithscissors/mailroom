@@ -443,6 +443,7 @@ class Mailroom_upd extends Installer
         $transports = [
             'smtp' => ['name' => 'Generic SMTP', 'provider' => 'smtp'],
             'mailpit' => ['name' => 'Mailpit / Dev Capture', 'provider' => 'dev_capture'],
+            'microsoft_graph' => ['name' => 'Microsoft 365 Graph', 'provider' => 'microsoft_graph'],
         ];
 
         foreach ($transports as $handle => $transport) {
