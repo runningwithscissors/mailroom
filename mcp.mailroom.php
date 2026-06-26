@@ -83,6 +83,7 @@ class Mailroom_mcp
         $this->renderSidebar('logs');
 
         $logs = new \BisonDigital\Mailroom\Services\LogService();
+        $settings = new \BisonDigital\Mailroom\Services\SettingsService();
 
         return [
             'heading' => lang('mailroom_nav_logs'),
@@ -92,6 +93,7 @@ class Mailroom_mcp
             ],
             'body' => ee('View')->make('mailroom:logs/index')->render([
                 'logs' => $logs->latest(),
+                'settings' => $settings->all(),
             ]),
         ];
     }
@@ -414,7 +416,7 @@ class Mailroom_mcp
 
     private function ensureEmailHook(): void
     {
-        (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook('0.2.1');
+        (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook('0.2.2');
     }
 
     private function safeDiagnostic(string $errorMessage, string $diagnosticMessage): string

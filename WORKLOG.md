@@ -40,6 +40,7 @@ Update this file after completed work sessions so a restarted assistant or devel
 - Graph delivery still needs live Azure app credentials with Graph application permission `Mail.Send` and admin consent to complete an end-to-end send test.
 - Added `0.2.1` hook repair behavior after staging showed `Mailroom_ext` installed but disabled in `exp_extensions`.
 - Added `ExtensionHookService` and wired Mailroom CP/settings saves to automatically register and enable the EE `email_send` hook.
+- Added `0.2.2` log privacy behavior: Email Log now displays stored bodies, recipient masking is applied at view time, and privacy mode hides sensitive log fields and prevents future body/header/metadata storage.
 
 ## Current Push Commands
 

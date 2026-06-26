@@ -22,7 +22,7 @@ require_once __DIR__ . '/src/Transports/MicrosoftGraphTransport.php';
 
 class Mailroom_ext
 {
-    public string $version = '0.2.1';
+    public string $version = '0.2.2';
     public mixed $settings = '';
     private static bool $sendingThroughMailroom = false;
 

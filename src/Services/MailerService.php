@@ -120,7 +120,8 @@ class MailerService
         $now = $this->now();
         $to = $this->firstAddress($message->to);
         $loggingMode = (string) $this->settings->get('logging_mode', 'metadata');
-        $storeBodies = $loggingMode === 'full';
+        $privacyMode = $this->settings->get('privacy_mode', 'n') === 'y';
+        $storeBodies = $loggingMode === 'full' && ! $privacyMode;
 
         ee()->db->insert('mailroom_logs', [
             'site_id' => $this->siteId(),
@@ -131,7 +132,7 @@ class MailerService
             'to_name' => '',
             'cc_json' => json_encode($message->cc),
             'bcc_json' => json_encode($message->bcc),
-            'subject' => $message->subject,
+            'subject' => $privacyMode ? '' : $message->subject,
             'from_email' => $message->from,
             'from_name' => $message->fromName,
             'reply_to_json' => json_encode($message->replyTo),
@@ -141,7 +142,7 @@ class MailerService
             'provider_response' => $result->providerResponse,
             'error_code' => $result->errorCode,
             'error_message' => $result->errorMessage,
-            'diagnostic_message' => $result->diagnosticMessage,
+            'diagnostic_message' => $privacyMode ? '' : $result->diagnosticMessage,
             'retry_count' => 0,
             'max_retries' => (int) $this->settings->get('max_retry_attempts', 3),
             'next_retry_at' => null,
@@ -151,9 +152,9 @@ class MailerService
             'last_retry_at' => null,
             'html_body' => $storeBodies ? $message->htmlBody : null,
             'text_body' => $storeBodies ? $message->textBody : null,
-            'headers_json' => json_encode($message->headers),
+            'headers_json' => $privacyMode ? null : json_encode($message->headers),
             'attachments_json' => json_encode($message->attachments),
-            'metadata_json' => json_encode($message->metadata),
+            'metadata_json' => $privacyMode ? null : json_encode($message->metadata),
         ]);
 
         return ['id' => (int) ee()->db->insert_id(), 'message_uuid' => $uuid];
