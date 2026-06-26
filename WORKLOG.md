@@ -38,6 +38,8 @@ Update this file after completed work sessions so a restarted assistant or devel
 - Installed Mailroom locally in DDEV; EE now reports Mailroom `0.2.0` installed and DB tables/transports exist.
 - Ran full PHP syntax checks across the add-on; all passed.
 - Graph delivery still needs live Azure app credentials with Graph application permission `Mail.Send` and admin consent to complete an end-to-end send test.
+- Added `0.2.1` hook repair behavior after staging showed `Mailroom_ext` installed but disabled in `exp_extensions`.
+- Added `ExtensionHookService` and wired Mailroom CP/settings saves to automatically register and enable the EE `email_send` hook.
 
 ## Current Push Commands
 

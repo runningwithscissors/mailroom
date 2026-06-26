@@ -8,6 +8,7 @@ require_once __DIR__ . '/src/DTO/EmailMessage.php';
 require_once __DIR__ . '/src/DTO/SendResult.php';
 require_once __DIR__ . '/src/DTO/ValidationResult.php';
 require_once __DIR__ . '/src/Services/SettingsService.php';
+require_once __DIR__ . '/src/Services/ExtensionHookService.php';
 require_once __DIR__ . '/src/Services/TransportRepository.php';
 require_once __DIR__ . '/src/Services/TransportFactory.php';
 require_once __DIR__ . '/src/Services/MailerService.php';
@@ -21,7 +22,7 @@ require_once __DIR__ . '/src/Transports/MicrosoftGraphTransport.php';
 
 class Mailroom_ext
 {
-    public string $version = '0.2.0';
+    public string $version = '0.2.1';
     public mixed $settings = '';
     private static bool $sendingThroughMailroom = false;
 
@@ -32,12 +33,12 @@ class Mailroom_ext
 
     public function activate_extension(): void
     {
-        $this->upsertHook();
+        $this->ensureHook();
     }
 
     public function update_extension(mixed $current = ''): bool
     {
-        $this->upsertHook();
+        $this->ensureHook();
 
         return true;
     }
@@ -77,51 +78,9 @@ class Mailroom_ext
         return $result->success;
     }
 
-    private function upsertHook(): void
+    private function ensureHook(): void
     {
-        $rows = ee()->db
-            ->select('extension_id')
-            ->where('class', __CLASS__)
-            ->where('hook', 'email_send')
-            ->order_by('extension_id', 'desc')
-            ->get('extensions')
-            ->result_array();
-
-        if (count($rows) > 1) {
-            $keep = (int) $rows[0]['extension_id'];
-
-            ee()->db
-                ->where('class', __CLASS__)
-                ->where('hook', 'email_send')
-                ->where('extension_id !=', $keep)
-                ->delete('extensions');
-        }
-
-        $data = [
-            'class' => __CLASS__,
-            'method' => 'email_send',
-            'hook' => 'email_send',
-            'settings' => serialize([]),
-            'priority' => 10,
-            'version' => $this->version,
-            'enabled' => 'y',
-        ];
-
-        $exists = (int) ee()->db
-            ->where('class', __CLASS__)
-            ->where('hook', 'email_send')
-            ->count_all_results('extensions');
-
-        if ($exists > 0) {
-            ee()->db
-                ->where('class', __CLASS__)
-                ->where('hook', 'email_send')
-                ->update('extensions', $data);
-
-            return;
-        }
-
-        ee()->db->insert('extensions', $data);
+        (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook($this->version);
     }
 
     private function payloadFromEmailHook(array $data): array

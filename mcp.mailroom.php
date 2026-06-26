@@ -11,6 +11,7 @@ require_once __DIR__ . '/src/DTO/ValidationResult.php';
 require_once __DIR__ . '/src/Services/LogService.php';
 require_once __DIR__ . '/src/Services/MailerService.php';
 require_once __DIR__ . '/src/Services/SettingsService.php';
+require_once __DIR__ . '/src/Services/ExtensionHookService.php';
 require_once __DIR__ . '/src/Services/TransportFactory.php';
 require_once __DIR__ . '/src/Services/TransportRepository.php';
 require_once __DIR__ . '/src/Services/Auth/OAuthClient.php';
@@ -30,6 +31,7 @@ class Mailroom_mcp
         ee()->lang->loadfile('mailroom');
 
         $this->baseUrl = ee('CP/URL')->make('addons/settings/mailroom')->compile();
+        $this->ensureEmailHook();
     }
 
     public function index(): array
@@ -365,6 +367,8 @@ class Mailroom_mcp
                 $settings->set($key, ee()->input->post($key) ? 'y' : 'n');
             }
 
+            $this->ensureEmailHook();
+
             ee('CP/Alert')->makeInline('mailroom-settings-saved')
                 ->asSuccess()
                 ->withTitle(lang('mailroom_settings_saved'))
@@ -406,6 +410,11 @@ class Mailroom_mcp
     private function renderSidebar(string $active): void
     {
         (new \BisonDigital\Mailroom\ControlPanel\Sidebar())->render($active);
+    }
+
+    private function ensureEmailHook(): void
+    {
+        (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook('0.2.1');
     }
 
     private function safeDiagnostic(string $errorMessage, string $diagnosticMessage): string
