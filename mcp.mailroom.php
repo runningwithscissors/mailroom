@@ -28,7 +28,7 @@ require_once __DIR__ . '/src/Transports/GoogleGmailTransport.php';
 class Mailroom_mcp
 {
     private string $baseUrl;
-    private const VERSION = '0.4.0';
+    private const VERSION = '0.4.1';
 
     public function __construct()
     {

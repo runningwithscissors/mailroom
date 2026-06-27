@@ -62,6 +62,11 @@ class GoogleOAuthClient
 
     private function jwt(array $header, array $claims, string $privateKey): string
     {
+        $key = openssl_pkey_get_private($privateKey);
+        if ($key === false) {
+            throw new RuntimeException('Google service account private key could not be parsed. Paste the full PEM key including BEGIN PRIVATE KEY and END PRIVATE KEY lines.');
+        }
+
         $segments = [
             $this->base64UrlEncode(json_encode($header) ?: ''),
             $this->base64UrlEncode(json_encode($claims) ?: ''),
@@ -69,7 +74,7 @@ class GoogleOAuthClient
         $signingInput = implode('.', $segments);
         $signature = '';
 
-        if (! openssl_sign($signingInput, $signature, $privateKey, OPENSSL_ALGO_SHA256)) {
+        if (! openssl_sign($signingInput, $signature, $key, OPENSSL_ALGO_SHA256)) {
             throw new RuntimeException('Unable to sign Google OAuth JWT. Check the service account private key.');
         }
 
