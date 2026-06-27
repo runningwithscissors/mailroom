@@ -416,7 +416,7 @@ class Mailroom_mcp
 
     private function ensureEmailHook(): void
     {
-        (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook('0.2.2');
+        (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook('0.2.3');
     }
 
     private function safeDiagnostic(string $errorMessage, string $diagnosticMessage): string
