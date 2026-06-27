@@ -16,17 +16,19 @@ require_once __DIR__ . '/src/Services/ExtensionHookService.php';
 require_once __DIR__ . '/src/Services/TransportFactory.php';
 require_once __DIR__ . '/src/Services/TransportRepository.php';
 require_once __DIR__ . '/src/Services/Auth/OAuthClient.php';
+require_once __DIR__ . '/src/Services/Auth/GoogleOAuthClient.php';
 require_once __DIR__ . '/src/Services/Auth/TokenStore.php';
 require_once __DIR__ . '/src/Transports/TransportInterface.php';
 require_once __DIR__ . '/src/Transports/AbstractTransport.php';
 require_once __DIR__ . '/src/Transports/SmtpTransport.php';
 require_once __DIR__ . '/src/Transports/MailpitTransport.php';
 require_once __DIR__ . '/src/Transports/MicrosoftGraphTransport.php';
+require_once __DIR__ . '/src/Transports/GoogleGmailTransport.php';
 
 class Mailroom_mcp
 {
     private string $baseUrl;
-    private const VERSION = '0.3.0';
+    private const VERSION = '0.4.0';
 
     public function __construct()
     {
@@ -377,6 +379,79 @@ class Mailroom_mcp
         ];
     }
 
+    public function google_gmail(): array
+    {
+        $this->renderSidebar('transports');
+
+        $repository = new \BisonDigital\Mailroom\Services\TransportRepository();
+        $repository->seedDefaults();
+        $notice = '';
+        $noticeType = 'success';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $current = $repository->settingsFor('google_gmail');
+            $privateKey = (string) ee()->input->post('private_key');
+
+            $settings = [
+                'client_email' => (string) ee()->input->post('client_email'),
+                'private_key' => $privateKey !== '' ? $privateKey : (string) ($current['private_key'] ?? ''),
+                'sender' => (string) ee()->input->post('sender'),
+                'from_name' => (string) ee()->input->post('from_name'),
+                'test_recipient' => (string) ee()->input->post('test_recipient'),
+            ];
+
+            $repository->updateSettings('google_gmail', $settings);
+
+            if ($this->googleCredentialsChanged($current, $settings)) {
+                (new \BisonDigital\Mailroom\Services\Auth\TokenStore())->clear(
+                    'google_gmail',
+                    $repository->idFor('google_gmail')
+                );
+            }
+
+            if ((string) ee()->input->post('mailroom_action') === 'test') {
+                $recipient = trim((string) ee()->input->post('test_recipient'));
+
+                if ($recipient === '' || ! filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+                    $notice = lang('mailroom_graph_test_recipient_required');
+                    $noticeType = 'issue';
+                } else {
+                    $result = (new \BisonDigital\Mailroom\Services\MailerService())->send([
+                        'to' => [$recipient],
+                        'from' => (string) ee()->input->post('sender'),
+                        'from_name' => (string) ee()->input->post('from_name'),
+                        'subject' => lang('mailroom_google_test_subject'),
+                        'text' => lang('mailroom_google_test_body'),
+                        'source' => 'mailroom_cp',
+                        'metadata' => ['source_label' => 'Google Gmail API Test'],
+                    ], 'google_gmail');
+
+                    if ($result->success) {
+                        $notice = $result->providerResponse !== '' ? $result->providerResponse : lang('mailroom_google_test_sent_desc');
+                    } else {
+                        $notice = $this->safeDiagnostic($result->errorMessage, $result->diagnosticMessage);
+                        $noticeType = 'issue';
+                    }
+                }
+            } else {
+                $notice = lang('mailroom_google_saved');
+            }
+        }
+
+        return [
+            'heading' => lang('mailroom_google_settings'),
+            'breadcrumb' => [
+                ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
+                $this->baseUrl => lang('mailroom_module_name'),
+                ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
+            ],
+            'body' => $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:transports/google_gmail')->render([
+                'action_url' => ee('CP/URL')->make('addons/settings/mailroom/google_gmail'),
+                'settings' => $repository->settingsFor('google_gmail'),
+            ]),
+        ];
+    }
+
     public function settings(): array
     {
         $this->renderSidebar('settings');
@@ -496,6 +571,7 @@ class Mailroom_mcp
             $this->check('mailroom_diagnostics_default_transport', $defaultTransport !== '' && is_array($transport), lang('mailroom_diagnostics_default_transport_desc')),
             $this->check('mailroom_diagnostics_transport_enabled', is_array($transport) && ($transport['enabled'] ?? 'n') === 'y', lang('mailroom_diagnostics_transport_enabled_desc')),
             $this->check('mailroom_diagnostics_graph_config', $defaultTransport !== 'microsoft_graph' || $this->graphConfigured($graphSettings), lang('mailroom_diagnostics_graph_config_desc')),
+            $this->check('mailroom_diagnostics_google_config', $defaultTransport !== 'google_gmail' || $this->googleConfigured($repository->settingsFor('google_gmail')), lang('mailroom_diagnostics_google_config_desc')),
             $this->check('mailroom_diagnostics_events_table', (new \BisonDigital\Mailroom\Services\EventService())->isReady(), lang('mailroom_diagnostics_events_table_desc')),
             $this->check('mailroom_diagnostics_webhook_secret', $settings->get('webhook_events_enabled', 'n') !== 'y' || trim((string) $settings->get('webhook_secret', '')) !== '', lang('mailroom_diagnostics_webhook_secret_desc')),
         ];
@@ -543,6 +619,17 @@ class Mailroom_mcp
         return true;
     }
 
+    private function googleConfigured(array $settings): bool
+    {
+        foreach (['client_email', 'private_key', 'sender'] as $key) {
+            if (trim((string) ($settings[$key] ?? '')) === '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private function webhookUrl(): string
     {
         $actionId = (int) ee()->db
@@ -564,6 +651,7 @@ class Mailroom_mcp
         $message = trim($errorMessage . ($diagnosticMessage !== '' ? "\n" . $diagnosticMessage : ''));
         $message = preg_replace('/Bearer\s+[A-Za-z0-9._~+\/=-]+/i', 'Bearer [redacted]', $message) ?? $message;
         $message = preg_replace('/(client_secret=)[^&\s]+/i', '$1[redacted]', $message) ?? $message;
+        $message = preg_replace('/-----BEGIN PRIVATE KEY-----.+?-----END PRIVATE KEY-----/s', '[redacted private key]', $message) ?? $message;
 
         return $message !== '' ? $message : lang('mailroom_graph_test_failed_desc');
     }
@@ -571,6 +659,17 @@ class Mailroom_mcp
     private function graphCredentialsChanged(array $current, array $settings): bool
     {
         foreach (['tenant_id', 'client_id', 'client_secret', 'sender'] as $key) {
+            if ((string) ($current[$key] ?? '') !== (string) ($settings[$key] ?? '')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function googleCredentialsChanged(array $current, array $settings): bool
+    {
+        foreach (['client_email', 'private_key', 'sender'] as $key) {
             if ((string) ($current[$key] ?? '') !== (string) ($settings[$key] ?? '')) {
                 return true;
             }

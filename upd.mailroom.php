@@ -516,6 +516,7 @@ class Mailroom_upd extends Installer
             'smtp' => ['name' => 'Generic SMTP', 'provider' => 'smtp'],
             'mailpit' => ['name' => 'Mailpit / Dev Capture', 'provider' => 'dev_capture'],
             'microsoft_graph' => ['name' => 'Microsoft 365 Graph', 'provider' => 'microsoft_graph'],
+            'google_gmail' => ['name' => 'Google Gmail API', 'provider' => 'google_gmail'],
         ];
 
         foreach ($transports as $handle => $transport) {

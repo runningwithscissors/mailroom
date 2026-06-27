@@ -13,16 +13,18 @@ require_once __DIR__ . '/src/Services/TransportRepository.php';
 require_once __DIR__ . '/src/Services/TransportFactory.php';
 require_once __DIR__ . '/src/Services/MailerService.php';
 require_once __DIR__ . '/src/Services/Auth/OAuthClient.php';
+require_once __DIR__ . '/src/Services/Auth/GoogleOAuthClient.php';
 require_once __DIR__ . '/src/Services/Auth/TokenStore.php';
 require_once __DIR__ . '/src/Transports/TransportInterface.php';
 require_once __DIR__ . '/src/Transports/AbstractTransport.php';
 require_once __DIR__ . '/src/Transports/SmtpTransport.php';
 require_once __DIR__ . '/src/Transports/MailpitTransport.php';
 require_once __DIR__ . '/src/Transports/MicrosoftGraphTransport.php';
+require_once __DIR__ . '/src/Transports/GoogleGmailTransport.php';
 
 class Mailroom_ext
 {
-    public string $version = '0.3.0';
+    public string $version = '0.4.0';
     public mixed $settings = '';
     private static bool $sendingThroughMailroom = false;
 

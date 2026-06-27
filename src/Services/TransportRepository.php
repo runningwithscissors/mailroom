@@ -57,6 +57,7 @@ class TransportRepository
         $this->ensureTransport('smtp', 'Generic SMTP', 'smtp');
         $this->ensureTransport('mailpit', 'Mailpit / Dev Capture', 'dev_capture');
         $this->ensureTransport('microsoft_graph', 'Microsoft 365 Graph', 'microsoft_graph');
+        $this->ensureTransport('google_gmail', 'Google Gmail API', 'google_gmail');
     }
 
     public function updateState(string $handle, bool $enabled, bool $default): void

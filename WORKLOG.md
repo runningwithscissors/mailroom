@@ -46,6 +46,7 @@ Update this file after completed work sessions so a restarted assistant or devel
 - Added `0.2.5` SMTP sender hardening: Generic SMTP now uses the configured From Email, or SMTP username when it is an email address, as the sender and keeps the original form sender as Reply-To for strict relays.
 - Added `0.2.6` CP password toggle polish: SMTP and Microsoft Graph secret fields now use a single swapped SVG icon to avoid browser/CP ghosting.
 - Added `0.3.0` provider webhook scaffolding: normalized `mailroom_events` table, generic shared-secret webhook action, settings fields for webhook enablement/secret/endpoint, and diagnostics checks. Provider-specific mapping is intentionally deferred.
+- Added `0.4.0` Google Gmail API transport using Google Workspace service account/domain-wide delegation, Gmail `users.messages.send`, token caching, CP settings/test send, diagnostics, and transport registration.
 
 ## Current Push Commands
 

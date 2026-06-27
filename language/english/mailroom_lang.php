@@ -58,6 +58,8 @@ $lang = [
     'mailroom_diagnostics_transport_enabled_desc' => 'The selected default transport is enabled.',
     'mailroom_diagnostics_graph_config' => 'Microsoft Graph configuration',
     'mailroom_diagnostics_graph_config_desc' => 'Required when Microsoft 365 Graph is the default transport.',
+    'mailroom_diagnostics_google_config' => 'Google Gmail API configuration',
+    'mailroom_diagnostics_google_config_desc' => 'Required when Google Gmail API is the default transport.',
     'mailroom_diagnostics_events_table' => 'Provider event table',
     'mailroom_diagnostics_events_table_desc' => 'The normalized Mailroom provider event table is present.',
     'mailroom_diagnostics_webhook_secret' => 'Webhook shared secret',
@@ -148,6 +150,15 @@ $lang = [
     'mailroom_graph_test_failed' => 'Microsoft Graph Test Failed',
     'mailroom_graph_test_failed_desc' => 'Microsoft Graph returned an error.',
     'mailroom_graph_test_recipient_required' => 'Enter a valid test recipient before sending a test email.',
+    'mailroom_google_settings' => 'Google Gmail API Settings',
+    'mailroom_google_saved' => 'Google Gmail API Settings Saved',
+    'mailroom_google_client_email' => 'Service Account Email',
+    'mailroom_google_private_key' => 'Service Account Private Key',
+    'mailroom_google_sender' => 'Delegated Sender Mailbox',
+    'mailroom_google_sender_desc' => 'The Google Workspace mailbox used with domain-wide delegation.',
+    'mailroom_google_test_subject' => 'Mailroom Google Gmail API test',
+    'mailroom_google_test_body' => 'This is a Google Gmail API test email sent by Mailroom.',
+    'mailroom_google_test_sent_desc' => 'Gmail API accepted the message for delivery.',
 ];
 
 return $lang;

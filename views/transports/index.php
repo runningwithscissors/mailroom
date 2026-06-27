@@ -51,6 +51,8 @@
                                     <a class="button button--small" href="<?=ee('CP/URL')->make('addons/settings/mailroom/dev_capture')?>"><?=lang('mailroom_manage')?></a>
                                 <?php elseif ($handle === 'microsoft_graph'): ?>
                                     <a class="button button--small" href="<?=ee('CP/URL')->make('addons/settings/mailroom/microsoft_graph')?>"><?=lang('mailroom_manage')?></a>
+                                <?php elseif ($handle === 'google_gmail'): ?>
+                                    <a class="button button--small" href="<?=ee('CP/URL')->make('addons/settings/mailroom/google_gmail')?>"><?=lang('mailroom_manage')?></a>
                                 <?php endif; ?>
                             </td>
                         </tr>
