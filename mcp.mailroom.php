@@ -9,6 +9,7 @@ require_once __DIR__ . '/src/DTO/EmailMessage.php';
 require_once __DIR__ . '/src/DTO/SendResult.php';
 require_once __DIR__ . '/src/DTO/ValidationResult.php';
 require_once __DIR__ . '/src/Services/LogService.php';
+require_once __DIR__ . '/src/Services/EventService.php';
 require_once __DIR__ . '/src/Services/MailerService.php';
 require_once __DIR__ . '/src/Services/SettingsService.php';
 require_once __DIR__ . '/src/Services/ExtensionHookService.php';
@@ -25,7 +26,7 @@ require_once __DIR__ . '/src/Transports/MicrosoftGraphTransport.php';
 class Mailroom_mcp
 {
     private string $baseUrl;
-    private const VERSION = '0.2.6';
+    private const VERSION = '0.3.0';
 
     public function __construct()
     {
@@ -401,6 +402,7 @@ class Mailroom_mcp
                 'redirect_email',
                 'allowlist_domains',
                 'intercept_core_email',
+                'webhook_secret',
             ];
 
             foreach ($keys as $key) {
@@ -412,6 +414,8 @@ class Mailroom_mcp
             foreach (['privacy_mode', 'recipient_masking', 'auto_retry', 'alert_on_failure', 'intercept_core_email'] as $key) {
                 $settings->set($key, ee()->input->post($key) ? 'y' : 'n');
             }
+
+            $settings->set('webhook_events_enabled', ee()->input->post('webhook_events_enabled') ? 'y' : 'n');
 
             $this->ensureEmailHook();
 
@@ -432,6 +436,7 @@ class Mailroom_mcp
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/settings'),
                 'settings' => $settings->all(),
                 'transport_choices' => $repository->enabledChoices(),
+                'webhook_url' => $this->webhookUrl(),
             ]),
         ];
     }
@@ -491,6 +496,8 @@ class Mailroom_mcp
             $this->check('mailroom_diagnostics_default_transport', $defaultTransport !== '' && is_array($transport), lang('mailroom_diagnostics_default_transport_desc')),
             $this->check('mailroom_diagnostics_transport_enabled', is_array($transport) && ($transport['enabled'] ?? 'n') === 'y', lang('mailroom_diagnostics_transport_enabled_desc')),
             $this->check('mailroom_diagnostics_graph_config', $defaultTransport !== 'microsoft_graph' || $this->graphConfigured($graphSettings), lang('mailroom_diagnostics_graph_config_desc')),
+            $this->check('mailroom_diagnostics_events_table', (new \BisonDigital\Mailroom\Services\EventService())->isReady(), lang('mailroom_diagnostics_events_table_desc')),
+            $this->check('mailroom_diagnostics_webhook_secret', $settings->get('webhook_events_enabled', 'n') !== 'y' || trim((string) $settings->get('webhook_secret', '')) !== '', lang('mailroom_diagnostics_webhook_secret_desc')),
         ];
     }
 
@@ -505,7 +512,7 @@ class Mailroom_mcp
 
     private function tablesExist(): bool
     {
-        foreach (['mailroom_settings', 'mailroom_transports', 'mailroom_tokens', 'mailroom_logs', 'mailroom_queue'] as $table) {
+        foreach (['mailroom_settings', 'mailroom_transports', 'mailroom_tokens', 'mailroom_logs', 'mailroom_queue', 'mailroom_events'] as $table) {
             if (! ee()->db->table_exists($table)) {
                 return false;
             }
@@ -534,6 +541,22 @@ class Mailroom_mcp
         }
 
         return true;
+    }
+
+    private function webhookUrl(): string
+    {
+        $actionId = (int) ee()->db
+            ->select('action_id')
+            ->where('class', 'Mailroom')
+            ->where('method', 'provider_webhook')
+            ->get('actions')
+            ->row('action_id');
+
+        if ($actionId <= 0) {
+            return '';
+        }
+
+        return ee()->functions->fetch_site_index(0, 0) . '?ACT=' . $actionId . '&provider=generic';
     }
 
     private function safeDiagnostic(string $errorMessage, string $diagnosticMessage): string

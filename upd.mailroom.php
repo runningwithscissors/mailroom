@@ -25,6 +25,7 @@ class Mailroom_upd extends Installer
         $this->createTables();
         $this->insertDefaultSettings();
         $this->insertDefaultTransports();
+        $this->registerActions();
 
         return true;
     }
@@ -32,6 +33,7 @@ class Mailroom_upd extends Installer
     public function uninstall(): bool
     {
         ee()->load->dbforge();
+        ee()->dbforge->drop_table('mailroom_events', true);
         ee()->dbforge->drop_table('mailroom_queue', true);
         ee()->dbforge->drop_table('mailroom_logs', true);
         ee()->dbforge->drop_table('mailroom_tokens', true);
@@ -48,6 +50,7 @@ class Mailroom_upd extends Installer
         $this->createTables();
         $this->insertDefaultSettings();
         $this->insertDefaultTransports();
+        $this->registerActions();
         $this->activate_extension();
 
         return true;
@@ -60,6 +63,7 @@ class Mailroom_upd extends Installer
         $this->createTokensTable();
         $this->createLogsTable();
         $this->createQueueTable();
+        $this->createEventsTable();
     }
 
     private function createSettingsTable(): void
@@ -381,6 +385,72 @@ class Mailroom_upd extends Installer
         ee()->dbforge->create_table('mailroom_queue', true);
     }
 
+    private function createEventsTable(): void
+    {
+        ee()->load->dbforge();
+
+        ee()->dbforge->add_field([
+            'id' => $this->idField(),
+            'site_id' => $this->intField(),
+            'provider' => [
+                'type' => 'varchar',
+                'constraint' => 64,
+                'null' => false,
+            ],
+            'event_type' => [
+                'type' => 'varchar',
+                'constraint' => 64,
+                'null' => false,
+            ],
+            'provider_event_id' => [
+                'type' => 'varchar',
+                'constraint' => 255,
+                'null' => true,
+            ],
+            'provider_message_id' => [
+                'type' => 'varchar',
+                'constraint' => 255,
+                'null' => true,
+            ],
+            'message_uuid' => [
+                'type' => 'varchar',
+                'constraint' => 64,
+                'null' => true,
+            ],
+            'recipient' => [
+                'type' => 'varchar',
+                'constraint' => 255,
+                'null' => true,
+            ],
+            'severity' => [
+                'type' => 'varchar',
+                'constraint' => 32,
+                'default' => 'info',
+                'null' => false,
+            ],
+            'event_at' => $this->nullableTimestampField(),
+            'payload_json' => [
+                'type' => 'mediumtext',
+                'null' => true,
+            ],
+            'signature_valid' => [
+                'type' => 'char',
+                'constraint' => 1,
+                'default' => 'n',
+                'null' => false,
+            ],
+            'created_at' => $this->timestampField(),
+        ]);
+        ee()->dbforge->add_key('id', true);
+        ee()->dbforge->add_key('site_id');
+        ee()->dbforge->add_key('provider');
+        ee()->dbforge->add_key('event_type');
+        ee()->dbforge->add_key('provider_message_id');
+        ee()->dbforge->add_key('message_uuid');
+        ee()->dbforge->add_key('event_at');
+        ee()->dbforge->create_table('mailroom_events', true);
+    }
+
     private function insertDefaultSettings(): void
     {
         if (! ee()->db->table_exists('mailroom_settings')) {
@@ -409,6 +479,8 @@ class Mailroom_upd extends Installer
             'redirect_email' => '',
             'allowlist_domains' => '',
             'intercept_core_email' => 'n',
+            'webhook_secret' => '',
+            'webhook_events_enabled' => 'n',
         ];
 
         foreach ($defaults as $key => $value) {
@@ -466,6 +538,29 @@ class Mailroom_upd extends Installer
                 'settings_json' => '{}',
                 'created_at' => $now,
                 'updated_at' => $now,
+            ]);
+        }
+    }
+
+    private function registerActions(): void
+    {
+        $actions = [
+            'provider_webhook',
+        ];
+
+        foreach ($actions as $method) {
+            $exists = (int) ee()->db
+                ->where('class', 'Mailroom')
+                ->where('method', $method)
+                ->count_all_results('actions');
+
+            if ($exists > 0) {
+                continue;
+            }
+
+            ee()->db->insert('actions', [
+                'class' => 'Mailroom',
+                'method' => $method,
             ]);
         }
     }

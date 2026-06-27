@@ -180,6 +180,37 @@
                 </div>
             </fieldset>
 
+            <fieldset>
+                <div class="field-instruct">
+                    <label for="webhook_events_enabled"><?=lang('mailroom_webhook_events')?></label>
+                    <em><?=lang('mailroom_webhook_events_desc')?></em>
+                </div>
+                <label class="choice block">
+                    <input id="webhook_events_enabled" type="checkbox" name="webhook_events_enabled" value="1" <?=($settings['webhook_events_enabled'] ?? 'n') === 'y' ? 'checked' : ''?>>
+                    <?=lang('mailroom_enabled')?>
+                </label>
+            </fieldset>
+
+            <fieldset>
+                <div class="field-instruct">
+                    <label for="webhook_secret"><?=lang('mailroom_webhook_secret')?></label>
+                    <em><?=lang('mailroom_webhook_secret_desc')?></em>
+                </div>
+                <div class="field-control">
+                    <input id="webhook_secret" type="text" name="webhook_secret" value="<?=htmlspecialchars((string) ($settings['webhook_secret'] ?? ''), ENT_QUOTES, 'UTF-8')?>">
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <div class="field-instruct">
+                    <label><?=lang('mailroom_webhook_url')?></label>
+                    <em><?=lang('mailroom_webhook_url_desc')?></em>
+                </div>
+                <div class="field-control">
+                    <input type="text" readonly value="<?=htmlspecialchars((string) ($webhook_url ?? ''), ENT_QUOTES, 'UTF-8')?>">
+                </div>
+            </fieldset>
+
             <fieldset class="form-ctrls">
                 <button class="btn action"><?=lang('save')?></button>
             </fieldset>
