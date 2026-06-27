@@ -42,6 +42,7 @@ Update this file after completed work sessions so a restarted assistant or devel
 - Added `ExtensionHookService` and wired Mailroom CP/settings saves to automatically register and enable the EE `email_send` hook.
 - Added `0.2.2` log privacy behavior: Email Log now displays stored bodies, recipient masking is applied at view time, and privacy mode hides sensitive log fields and prevents future body/header/metadata storage.
 - Added `0.2.3` manifest compatibility update: PHP requirement lowered from `8.2` to `8.1` because the code supports PHP 8.1+ and stricter manifest requirements can hide Mailroom on remote EE installs.
+- Added `0.2.4` CP polish: inline save/test notices, real Diagnostics screen with hook/table/default transport checks and hook repair action, and Email Log bulk actions for deleting selected logs or only stored bodies.
 
 ## Current Push Commands
 

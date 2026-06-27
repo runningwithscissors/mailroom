@@ -71,6 +71,56 @@ class LogService
             ->result_array();
     }
 
+    public function deleteByIds(array $ids): int
+    {
+        if (! $this->tableExists()) {
+            return 0;
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return 0;
+        }
+
+        if ($this->queueTableExists()) {
+            ee()->db
+                ->where('site_id', $this->siteId())
+                ->where_in('log_id', $ids)
+                ->delete('mailroom_queue');
+        }
+
+        ee()->db
+            ->where('site_id', $this->siteId())
+            ->where_in('id', $ids)
+            ->delete('mailroom_logs');
+
+        return (int) ee()->db->affected_rows();
+    }
+
+    public function deleteBodiesByIds(array $ids): int
+    {
+        if (! $this->tableExists()) {
+            return 0;
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return 0;
+        }
+
+        ee()->db
+            ->where('site_id', $this->siteId())
+            ->where_in('id', $ids)
+            ->update('mailroom_logs', [
+                'html_body' => null,
+                'text_body' => null,
+                'headers_json' => null,
+                'metadata_json' => null,
+            ]);
+
+        return (int) ee()->db->affected_rows();
+    }
+
     private function tableExists(): bool
     {
         return function_exists('ee') && ee()->db->table_exists('mailroom_logs');

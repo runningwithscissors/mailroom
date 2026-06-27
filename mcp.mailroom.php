@@ -25,6 +25,7 @@ require_once __DIR__ . '/src/Transports/MicrosoftGraphTransport.php';
 class Mailroom_mcp
 {
     private string $baseUrl;
+    private const VERSION = '0.2.4';
 
     public function __construct()
     {
@@ -84,6 +85,23 @@ class Mailroom_mcp
 
         $logs = new \BisonDigital\Mailroom\Services\LogService();
         $settings = new \BisonDigital\Mailroom\Services\SettingsService();
+        $notice = '';
+        $noticeType = 'success';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ids = ee()->input->post('log_ids');
+            $ids = is_array($ids) ? $ids : [];
+            $action = (string) ee()->input->post('mailroom_action');
+
+            if ($ids === []) {
+                $notice = lang('mailroom_no_logs_selected');
+                $noticeType = 'issue';
+            } elseif ($action === 'delete_logs') {
+                $notice = sprintf(lang('mailroom_logs_deleted'), $logs->deleteByIds($ids));
+            } elseif ($action === 'delete_log_bodies') {
+                $notice = sprintf(lang('mailroom_log_bodies_deleted'), $logs->deleteBodiesByIds($ids));
+            }
+        }
 
         return [
             'heading' => lang('mailroom_nav_logs'),
@@ -91,7 +109,8 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => ee('View')->make('mailroom:logs/index')->render([
+            'body' => $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:logs/index')->render([
+                'action_url' => ee('CP/URL')->make('addons/settings/mailroom/logs'),
                 'logs' => $logs->latest(),
                 'settings' => $settings->all(),
             ]),
@@ -110,6 +129,7 @@ class Mailroom_mcp
         $repository = new \BisonDigital\Mailroom\Services\TransportRepository();
         $settings = new \BisonDigital\Mailroom\Services\SettingsService();
         $repository->seedDefaults();
+        $notice = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $default = (string) ee()->input->post('default_transport');
@@ -132,8 +152,7 @@ class Mailroom_mcp
                 ->asSuccess()
                 ->withTitle(lang('mailroom_transports_saved'))
                 ->defer();
-
-            ee()->functions->redirect(ee('CP/URL')->make('addons/settings/mailroom/transports'));
+            $notice = lang('mailroom_transports_saved');
         }
 
         return [
@@ -142,7 +161,7 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => ee('View')->make('mailroom:transports/index')->render([
+            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/index')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/transports'),
                 'transports' => $repository->all(),
                 'default_transport' => (string) $settings->get('default_transport', ''),
@@ -152,7 +171,25 @@ class Mailroom_mcp
 
     public function diagnostics(): array
     {
-        return $this->placeholder('diagnostics', 'mailroom_nav_diagnostics', 'mailroom_placeholder_diagnostics');
+        $this->renderSidebar('diagnostics');
+
+        $notice = '';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ee()->input->post('mailroom_action') === 'repair_hook') {
+            $this->ensureEmailHook();
+            $notice = lang('mailroom_diagnostics_hook_repaired');
+        }
+
+        return [
+            'heading' => lang('mailroom_nav_diagnostics'),
+            'breadcrumb' => [
+                ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
+                $this->baseUrl => lang('mailroom_module_name'),
+            ],
+            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:diagnostics/index')->render([
+                'action_url' => ee('CP/URL')->make('addons/settings/mailroom/diagnostics'),
+                'checks' => $this->diagnosticChecks(),
+            ]),
+        ];
     }
 
     public function smtp(): array
@@ -161,6 +198,7 @@ class Mailroom_mcp
 
         $repository = new \BisonDigital\Mailroom\Services\TransportRepository();
         $repository->seedDefaults();
+        $notice = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $password = (string) (ee()->input->post('smtp_password') ?: ee()->input->post('password'));
@@ -184,8 +222,7 @@ class Mailroom_mcp
                 ->asSuccess()
                 ->withTitle(lang('mailroom_smtp_saved'))
                 ->defer();
-
-            ee()->functions->redirect(ee('CP/URL')->make('addons/settings/mailroom/smtp'));
+            $notice = lang('mailroom_smtp_saved');
         }
 
         return [
@@ -195,7 +232,7 @@ class Mailroom_mcp
                 $this->baseUrl => lang('mailroom_module_name'),
                 ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
             ],
-            'body' => ee('View')->make('mailroom:transports/smtp')->render([
+            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/smtp')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/smtp'),
                 'settings' => $repository->settingsFor('smtp'),
             ]),
@@ -208,6 +245,7 @@ class Mailroom_mcp
 
         $repository = new \BisonDigital\Mailroom\Services\TransportRepository();
         $repository->seedDefaults();
+        $notice = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $password = (string) ee()->input->post('mailpit_password');
@@ -228,8 +266,7 @@ class Mailroom_mcp
                 ->asSuccess()
                 ->withTitle(lang('mailroom_dev_capture_saved'))
                 ->defer();
-
-            ee()->functions->redirect(ee('CP/URL')->make('addons/settings/mailroom/dev_capture'));
+            $notice = lang('mailroom_dev_capture_saved');
         }
 
         return [
@@ -239,7 +276,7 @@ class Mailroom_mcp
                 $this->baseUrl => lang('mailroom_module_name'),
                 ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
             ],
-            'body' => ee('View')->make('mailroom:transports/dev_capture')->render([
+            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/dev_capture')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/dev_capture'),
                 'settings' => $repository->settingsFor('mailpit'),
             ]),
@@ -252,6 +289,8 @@ class Mailroom_mcp
 
         $repository = new \BisonDigital\Mailroom\Services\TransportRepository();
         $repository->seedDefaults();
+        $notice = '';
+        $noticeType = 'success';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $current = $repository->settingsFor('microsoft_graph');
@@ -284,6 +323,8 @@ class Mailroom_mcp
                         ->withTitle(lang('mailroom_graph_test_failed'))
                         ->addToBody(lang('mailroom_graph_test_recipient_required'))
                         ->defer();
+                    $notice = lang('mailroom_graph_test_recipient_required');
+                    $noticeType = 'issue';
                 } else {
                     $result = (new \BisonDigital\Mailroom\Services\MailerService())->send([
                         'to' => [$recipient],
@@ -302,11 +343,14 @@ class Mailroom_mcp
                             ->withTitle(lang('mailroom_graph_test_sent'))
                             ->addToBody($result->providerResponse !== '' ? $result->providerResponse : lang('mailroom_graph_test_sent_desc'))
                             ->defer();
+                        $notice = $result->providerResponse !== '' ? $result->providerResponse : lang('mailroom_graph_test_sent_desc');
                     } else {
                         $alert->asIssue()
                             ->withTitle(lang('mailroom_graph_test_failed'))
                             ->addToBody($this->safeDiagnostic($result->errorMessage, $result->diagnosticMessage))
                             ->defer();
+                        $notice = $this->safeDiagnostic($result->errorMessage, $result->diagnosticMessage);
+                        $noticeType = 'issue';
                     }
                 }
             } else {
@@ -314,9 +358,8 @@ class Mailroom_mcp
                     ->asSuccess()
                     ->withTitle(lang('mailroom_graph_saved'))
                     ->defer();
+                $notice = lang('mailroom_graph_saved');
             }
-
-            ee()->functions->redirect(ee('CP/URL')->make('addons/settings/mailroom/microsoft_graph'));
         }
 
         return [
@@ -326,7 +369,7 @@ class Mailroom_mcp
                 $this->baseUrl => lang('mailroom_module_name'),
                 ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
             ],
-            'body' => ee('View')->make('mailroom:transports/microsoft_graph')->render([
+            'body' => $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:transports/microsoft_graph')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/microsoft_graph'),
                 'settings' => $repository->settingsFor('microsoft_graph'),
             ]),
@@ -340,6 +383,7 @@ class Mailroom_mcp
         $settings = new \BisonDigital\Mailroom\Services\SettingsService();
         $repository = new \BisonDigital\Mailroom\Services\TransportRepository();
         $repository->seedDefaults();
+        $notice = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $keys = [
@@ -375,8 +419,7 @@ class Mailroom_mcp
                 ->asSuccess()
                 ->withTitle(lang('mailroom_settings_saved'))
                 ->defer();
-
-            ee()->functions->redirect(ee('CP/URL')->make('addons/settings/mailroom/settings'));
+            $notice = lang('mailroom_settings_saved');
         }
 
         return [
@@ -385,7 +428,7 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => ee('View')->make('mailroom:settings/index')->render([
+            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:settings/index')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/settings'),
                 'settings' => $settings->all(),
                 'transport_choices' => $repository->enabledChoices(),
@@ -416,7 +459,81 @@ class Mailroom_mcp
 
     private function ensureEmailHook(): void
     {
-        (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook('0.2.3');
+        (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook(self::VERSION);
+    }
+
+    private function noticeHtml(string $message, string $type = 'success'): string
+    {
+        if ($message === '') {
+            return '';
+        }
+
+        $class = $type === 'issue' ? 'mailroom-notice mailroom-notice--issue' : 'mailroom-notice mailroom-notice--success';
+        $style = $type === 'issue'
+            ? 'margin:0 0 16px;padding:12px 14px;border-radius:4px;border:1px solid #f0c2c2;background:#fff2f2;color:#8f2626;'
+            : 'margin:0 0 16px;padding:12px 14px;border-radius:4px;border:1px solid #b7dec2;background:#effaf2;color:#1f6b33;';
+
+        return '<div class="' . $class . '" style="' . $style . '">' . nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8')) . '</div>';
+    }
+
+    private function diagnosticChecks(): array
+    {
+        $settings = new \BisonDigital\Mailroom\Services\SettingsService();
+        $repository = new \BisonDigital\Mailroom\Services\TransportRepository();
+        $defaultTransport = (string) $settings->get('default_transport', '');
+        $transport = $defaultTransport !== '' ? $repository->findByHandle($defaultTransport) : null;
+        $graphSettings = $repository->settingsFor('microsoft_graph');
+
+        return [
+            $this->check('mailroom_diagnostics_tables', $this->tablesExist(), lang('mailroom_diagnostics_tables_desc')),
+            $this->check('mailroom_diagnostics_hook', $this->hookEnabled(), lang('mailroom_diagnostics_hook_desc')),
+            $this->check('mailroom_diagnostics_route', $settings->get('intercept_core_email', 'n') === 'y', lang('mailroom_diagnostics_route_desc')),
+            $this->check('mailroom_diagnostics_default_transport', $defaultTransport !== '' && is_array($transport), lang('mailroom_diagnostics_default_transport_desc')),
+            $this->check('mailroom_diagnostics_transport_enabled', is_array($transport) && ($transport['enabled'] ?? 'n') === 'y', lang('mailroom_diagnostics_transport_enabled_desc')),
+            $this->check('mailroom_diagnostics_graph_config', $defaultTransport !== 'microsoft_graph' || $this->graphConfigured($graphSettings), lang('mailroom_diagnostics_graph_config_desc')),
+        ];
+    }
+
+    private function check(string $labelKey, bool $pass, string $description): array
+    {
+        return [
+            'label' => lang($labelKey),
+            'status' => $pass ? 'pass' : 'fail',
+            'description' => $description,
+        ];
+    }
+
+    private function tablesExist(): bool
+    {
+        foreach (['mailroom_settings', 'mailroom_transports', 'mailroom_tokens', 'mailroom_logs', 'mailroom_queue'] as $table) {
+            if (! ee()->db->table_exists($table)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function hookEnabled(): bool
+    {
+        $row = ee()->db
+            ->where('class', 'Mailroom_ext')
+            ->where('hook', 'email_send')
+            ->get('extensions')
+            ->row_array();
+
+        return is_array($row) && ($row['enabled'] ?? 'n') === 'y';
+    }
+
+    private function graphConfigured(array $settings): bool
+    {
+        foreach (['tenant_id', 'client_id', 'client_secret', 'sender'] as $key) {
+            if (trim((string) ($settings[$key] ?? '')) === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function safeDiagnostic(string $errorMessage, string $diagnosticMessage): string
