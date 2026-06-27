@@ -70,7 +70,7 @@ class SmtpTransport extends AbstractTransport
             $email->initialize($this->emailConfig());
             $email->clear(true);
 
-            $from = $message->from !== '' ? $message->from : (string) $this->setting('from_email', '');
+            $from = $this->senderEmail($message);
             $fromName = $message->fromName !== '' ? $message->fromName : (string) $this->setting('from_name', '');
 
             $email->from($from, $fromName);
@@ -86,7 +86,7 @@ class SmtpTransport extends AbstractTransport
 
             $replyTo = $message->replyTo !== []
                 ? $this->firstAddress($message->replyTo)
-                : (string) $this->setting('reply_to', '');
+                : ($message->from !== '' ? $message->from : (string) $this->setting('reply_to', ''));
 
             if ($replyTo !== '') {
                 $email->reply_to($replyTo);
@@ -186,7 +186,7 @@ class SmtpTransport extends AbstractTransport
     protected function validateMessage(EmailMessage $message): ValidationResult
     {
         $result = ValidationResult::valid();
-        $from = $message->from !== '' ? $message->from : (string) $this->setting('from_email', '');
+        $from = $this->senderEmail($message);
 
         if ($message->to === []) {
             $result->addError('to', 'At least one recipient is required.');
@@ -214,6 +214,21 @@ class SmtpTransport extends AbstractTransport
         }
 
         return $result;
+    }
+
+    private function senderEmail(EmailMessage $message): string
+    {
+        $configuredFrom = trim((string) $this->setting('from_email', ''));
+        if ($configuredFrom !== '') {
+            return $configuredFrom;
+        }
+
+        $username = trim((string) $this->setting('username', ''));
+        if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
+            return $username;
+        }
+
+        return $message->from;
     }
 
     protected function addressList(array $addresses): string

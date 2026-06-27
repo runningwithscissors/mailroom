@@ -25,7 +25,7 @@ require_once __DIR__ . '/src/Transports/MicrosoftGraphTransport.php';
 class Mailroom_mcp
 {
     private string $baseUrl;
-    private const VERSION = '0.2.4';
+    private const VERSION = '0.2.5';
 
     public function __construct()
     {

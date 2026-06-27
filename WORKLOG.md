@@ -43,6 +43,7 @@ Update this file after completed work sessions so a restarted assistant or devel
 - Added `0.2.2` log privacy behavior: Email Log now displays stored bodies, recipient masking is applied at view time, and privacy mode hides sensitive log fields and prevents future body/header/metadata storage.
 - Added `0.2.3` manifest compatibility update: PHP requirement lowered from `8.2` to `8.1` because the code supports PHP 8.1+ and stricter manifest requirements can hide Mailroom on remote EE installs.
 - Added `0.2.4` CP polish: inline save/test notices, real Diagnostics screen with hook/table/default transport checks and hook repair action, and Email Log bulk actions for deleting selected logs or only stored bodies.
+- Added `0.2.5` SMTP sender hardening: Generic SMTP now uses the configured From Email, or SMTP username when it is an email address, as the sender and keeps the original form sender as Reply-To for strict relays.
 
 ## Current Push Commands
 
