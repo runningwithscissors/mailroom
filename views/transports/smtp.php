@@ -57,15 +57,9 @@
                         aria-label="<?=htmlspecialchars(lang('mailroom_show_password'), ENT_QUOTES, 'UTF-8')?>"
                         title="<?=htmlspecialchars(lang('mailroom_show_password'), ENT_QUOTES, 'UTF-8')?>"
                     >
-                        <svg class="mailroom-eye mailroom-eye--show" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <svg class="mailroom-eye" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                        <svg class="mailroom-eye mailroom-eye--hide" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <path d="M10.6 10.6A3 3 0 0 0 13.4 13.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a18.4 18.4 0 0 1-2.3 3.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a10.8 10.8 0 0 0 4.2-.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </button>
                 </div>
@@ -144,31 +138,24 @@
     .mailroom-password-toggle:hover {
         color: #111827;
     }
-
-    .mailroom-eye--hide {
-        display: none;
-    }
-
-    .mailroom-password-toggle.is-visible .mailroom-eye--show {
-        display: none;
-    }
-
-    .mailroom-password-toggle.is-visible .mailroom-eye--hide {
-        display: block;
-    }
 </style>
 
 <script>
+    var mailroomEyeShow = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>';
+    var mailroomEyeHide = '<path d="M3 3l18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10.6 10.6A3 3 0 0 0 13.4 13.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a18.4 18.4 0 0 1-2.3 3.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a10.8 10.8 0 0 0 4.2-.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+
     document.querySelectorAll('.mailroom-password-toggle').forEach(function (button) {
         button.addEventListener('click', function () {
             var input = document.getElementById(button.getAttribute('data-target'));
+            var icon = button.querySelector('.mailroom-eye');
 
-            if (! input) {
+            if (! input || ! icon) {
                 return;
             }
 
             var visible = input.type === 'text';
             input.type = visible ? 'password' : 'text';
+            icon.innerHTML = visible ? mailroomEyeShow : mailroomEyeHide;
             button.classList.toggle('is-visible', ! visible);
             button.setAttribute('aria-label', visible ? '<?=addslashes(lang('mailroom_show_password'))?>' : '<?=addslashes(lang('mailroom_hide_password'))?>');
             button.setAttribute('title', visible ? '<?=addslashes(lang('mailroom_show_password'))?>' : '<?=addslashes(lang('mailroom_hide_password'))?>');
