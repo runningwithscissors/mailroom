@@ -4,20 +4,6 @@
     </div>
 </div>
 
-<div class="tbl-ctrls">
-    <div class="app-notice-wrap">
-        <div class="app-notice app-notice--inline">
-            <div class="app-notice__tag">
-                <span class="app-notice__icon"></span>
-            </div>
-            <div class="app-notice__content">
-                <h3><?=lang('mailroom_foundation_status')?></h3>
-                <p><?=lang('mailroom_foundation_status_desc')?></p>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="box panel">
     <div class="panel-body">
         <div class="mailroom-dashboard-grid">
@@ -28,19 +14,6 @@
                 </div>
             <?php endforeach; ?>
         </div>
-    </div>
-</div>
-
-<div class="box panel">
-    <div class="panel-heading">
-        <h2><?=lang('mailroom_next_steps')?></h2>
-    </div>
-    <div class="panel-body">
-        <ul>
-            <li><?=lang('mailroom_next_step_schema')?></li>
-            <li><?=lang('mailroom_next_step_transport')?></li>
-            <li><?=lang('mailroom_next_step_smtp')?></li>
-        </ul>
     </div>
 </div>
 

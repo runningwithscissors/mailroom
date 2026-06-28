@@ -48,6 +48,9 @@ Update this file after completed work sessions so a restarted assistant or devel
 - Added `0.3.0` provider webhook scaffolding: normalized `mailroom_events` table, generic shared-secret webhook action, settings fields for webhook enablement/secret/endpoint, and diagnostics checks. Provider-specific mapping is intentionally deferred.
 - Added `0.4.0` Google Gmail API transport using Google Workspace service account/domain-wide delegation, Gmail `users.messages.send`, token caching, CP settings/test send, diagnostics, and transport registration.
 - Added `0.4.1` Google private-key validation so malformed service account keys return a controlled Mailroom error instead of an OpenSSL warning.
+- Added Google Gmail API field helper copy so admins can distinguish JSON `client_email`, JSON `private_key`, and the real delegated sender mailbox.
+- Added a Mailroom Documentation CP page covering installation, configuration, usage, transports, logging/privacy, webhook scaffolding, and troubleshooting.
+- Removed stale scaffold-era Foundation Status and Next Steps panels from the dashboard.
 
 ## Current Push Commands
 

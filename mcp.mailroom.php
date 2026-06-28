@@ -516,6 +516,25 @@ class Mailroom_mcp
         ];
     }
 
+    public function documentation(): array
+    {
+        $this->renderSidebar('documentation');
+
+        return [
+            'heading' => lang('mailroom_nav_documentation'),
+            'breadcrumb' => [
+                ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
+                $this->baseUrl => lang('mailroom_module_name'),
+            ],
+            'body' => ee('View')->make('mailroom:documentation/index')->render([
+                'settings_url' => ee('CP/URL')->make('addons/settings/mailroom/settings'),
+                'transports_url' => ee('CP/URL')->make('addons/settings/mailroom/transports'),
+                'diagnostics_url' => ee('CP/URL')->make('addons/settings/mailroom/diagnostics'),
+                'logs_url' => ee('CP/URL')->make('addons/settings/mailroom/logs'),
+            ]),
+        ];
+    }
+
     private function placeholder(string $active, string $headingKey, string $messageKey): array
     {
         $this->renderSidebar($active);

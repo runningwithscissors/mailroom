@@ -37,6 +37,10 @@ class Sidebar
                 'label' => lang('mailroom_nav_settings'),
                 'url' => ee('CP/URL')->make('addons/settings/mailroom/settings'),
             ],
+            'documentation' => [
+                'label' => lang('mailroom_nav_documentation'),
+                'url' => ee('CP/URL')->make('addons/settings/mailroom/documentation'),
+            ],
         ];
 
         $section = $sidebar->addHeader(lang('mailroom_module_name'));

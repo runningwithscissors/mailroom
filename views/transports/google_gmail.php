@@ -6,6 +6,7 @@
             <fieldset>
                 <div class="field-instruct">
                     <label for="client_email"><?=lang('mailroom_google_client_email')?></label>
+                    <em><?=lang('mailroom_google_client_email_desc')?></em>
                 </div>
                 <div class="field-control">
                     <input id="client_email" type="email" name="client_email" value="<?=htmlspecialchars((string) ($settings['client_email'] ?? ''), ENT_QUOTES, 'UTF-8')?>">
@@ -16,6 +17,7 @@
                 <div class="field-instruct">
                     <label for="private_key"><?=lang('mailroom_google_private_key')?></label>
                     <em><?=lang('mailroom_secret_leave_blank')?></em>
+                    <em><?=lang('mailroom_google_private_key_desc')?></em>
                 </div>
                 <div class="field-control">
                     <textarea id="private_key" name="private_key" rows="8" autocomplete="new-password"></textarea>
