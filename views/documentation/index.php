@@ -62,6 +62,7 @@
     </div>
     <div class="panel-body">
         <p>Mailroom does not require new template tags. Existing ExpressionEngine email sends continue to use the normal EE APIs and template tags once routing is enabled.</p>
+        <p>Mailroom itself does not require ExpressionEngine's Email module for transport tests, logging, diagnostics, or routing core EE email. The sample below uses <code>{exp:email:contact_form}</code>, so that specific form does require the EE Email module to be installed. Third-party form add-ons can still work with Mailroom when they send through EE's email service and trigger the normal email hook.</p>
 
         <h3>Basic EE Contact Form</h3>
         <pre><code>{exp:email:contact_form
@@ -144,8 +145,6 @@
             <li>In Mailroom, Service Account Private Key is the JSON <code>private_key</code> value, including <code>BEGIN PRIVATE KEY</code> and <code>END PRIVATE KEY</code>.</li>
             <li>In Mailroom, Delegated Sender Mailbox is the real Google Workspace mailbox to send as, such as <code>me@example.com</code>.</li>
         </ol>
-
-        <p>Do not paste <code>private_key_id</code> into the private key field. That value is just a label. If a private key is ever exposed in a screenshot or chat, delete that key in Google Cloud and create a new one.</p>
     </div>
 </div>
 
@@ -233,7 +232,9 @@
     }
 
     .mailroom-docs pre {
-        overflow-x: auto;
+        overflow-x: visible;
+        white-space: pre-wrap;
+        word-break: break-word;
         padding: 14px;
         border: 1px solid #dfe3e6;
         border-radius: 4px;
@@ -243,5 +244,7 @@
     .mailroom-docs code {
         font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
         font-size: 12px;
+        white-space: pre-wrap;
+        word-break: break-word;
     }
 </style>
