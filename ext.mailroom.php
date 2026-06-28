@@ -24,7 +24,7 @@ require_once __DIR__ . '/src/Transports/GoogleGmailTransport.php';
 
 class Mailroom_ext
 {
-    public string $version = '0.4.1';
+    public string $version = '1.0.0';
     public mixed $settings = '';
     private static bool $sendingThroughMailroom = false;
 
