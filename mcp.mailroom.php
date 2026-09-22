@@ -208,6 +208,9 @@ class Mailroom_mcp
             $current = $repository->settingsFor('smtp');
 
             $settings = [
+                'config_source' => in_array((string) ee()->input->post('config_source'), ['manual', 'ee_config'], true)
+                    ? (string) ee()->input->post('config_source')
+                    : 'manual',
                 'host' => (string) ee()->input->post('host'),
                 'port' => (string) ee()->input->post('port'),
                 'encryption' => (string) ee()->input->post('encryption'),
@@ -238,6 +241,7 @@ class Mailroom_mcp
             'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/smtp')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/smtp'),
                 'settings' => $repository->settingsFor('smtp'),
+                'ee_config' => $this->smtpConfigPreview(),
             ]),
         ];
     }
@@ -253,14 +257,15 @@ class Mailroom_mcp
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $password = (string) ee()->input->post('mailpit_password');
             $current = $repository->settingsFor('mailpit');
+            $useDdevDefaults = (string) ee()->input->post('mailroom_action') === 'ddev_defaults';
 
             $settings = [
-                'mode_label' => (string) ee()->input->post('mode_label'),
-                'mailpit_host' => (string) ee()->input->post('mailpit_host'),
-                'mailpit_port' => (string) ee()->input->post('mailpit_port'),
-                'mailpit_tls' => ee()->input->post('mailpit_tls') ? 'y' : 'n',
-                'mailpit_username' => (string) ee()->input->post('mailpit_username'),
-                'mailpit_password' => $password !== '' ? $password : (string) ($current['mailpit_password'] ?? ''),
+                'mode_label' => $useDdevDefaults ? 'Local Mailpit' : (string) ee()->input->post('mode_label'),
+                'mailpit_host' => $useDdevDefaults ? '127.0.0.1' : (string) ee()->input->post('mailpit_host'),
+                'mailpit_port' => $useDdevDefaults ? '1025' : (string) ee()->input->post('mailpit_port'),
+                'mailpit_tls' => $useDdevDefaults ? 'n' : (ee()->input->post('mailpit_tls') ? 'y' : 'n'),
+                'mailpit_username' => $useDdevDefaults ? '' : (string) ee()->input->post('mailpit_username'),
+                'mailpit_password' => $useDdevDefaults ? '' : ($password !== '' ? $password : (string) ($current['mailpit_password'] ?? '')),
             ];
 
             $repository->updateSettings('mailpit', $settings);
@@ -663,6 +668,33 @@ class Mailroom_mcp
         }
 
         return ee()->functions->fetch_site_index(0, 0) . '?ACT=' . $actionId . '&provider=generic';
+    }
+
+    private function smtpConfigPreview(): array
+    {
+        $encryption = strtolower(trim((string) (ee()->config->item('email_smtp_crypto') ?: ee()->config->item('smtp_crypto') ?: '')));
+        if (! in_array($encryption, ['tls', 'ssl'], true)) {
+            $encryption = 'none';
+        }
+
+        return [
+            'host' => (string) (ee()->config->item('smtp_server') ?: ee()->config->item('smtp_host') ?: ''),
+            'port' => (string) (ee()->config->item('smtp_port') ?: ''),
+            'username_set' => (ee()->config->item('smtp_username') ?: ee()->config->item('smtp_user') ?: '') !== '',
+            'password_set' => (ee()->config->item('smtp_password') ?: ee()->config->item('smtp_pass') ?: '') !== '',
+            'encryption' => $encryption,
+            'newline' => $this->newlinePreview((string) (ee()->config->item('email_newline') ?: ee()->config->item('newline') ?: '\r\n')),
+        ];
+    }
+
+    private function newlinePreview(string $newline): string
+    {
+        return match ($newline) {
+            "\r\n", '\r\n' => '\r\n',
+            "\n", '\n' => '\n',
+            "\r", '\r' => '\r',
+            default => $newline,
+        };
     }
 
     private function safeDiagnostic(string $errorMessage, string $diagnosticMessage): string

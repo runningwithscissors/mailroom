@@ -22,6 +22,7 @@ class SmtpTransport extends AbstractTransport
     public function validateSettings(array $settings): ValidationResult
     {
         $result = ValidationResult::valid();
+        $settings = $this->resolvedSmtpSettings($settings);
 
         if (trim((string) ($settings['host'] ?? '')) === '') {
             $result->addError('host', 'SMTP host is required.');
@@ -149,20 +150,22 @@ class SmtpTransport extends AbstractTransport
 
     protected function emailConfig(): array
     {
+        $settings = $this->resolvedSmtpSettings($this->settings);
+
         $config = [
             'protocol' => 'smtp',
-            'smtp_host' => (string) $this->setting('host', ''),
-            'smtp_port' => (int) $this->setting('port', 587),
-            'smtp_user' => (string) $this->setting('username', ''),
-            'smtp_pass' => (string) $this->setting('password', ''),
+            'smtp_host' => (string) ($settings['host'] ?? ''),
+            'smtp_port' => (int) ($settings['port'] ?? 587),
+            'smtp_user' => (string) ($settings['username'] ?? ''),
+            'smtp_pass' => (string) ($settings['password'] ?? ''),
             'mailtype' => 'html',
             'charset' => (string) (ee()->config->item('email_charset') ?: 'utf-8'),
-            'newline' => "\r\n",
-            'crlf' => "\r\n",
-            'smtp_timeout' => (int) $this->setting('timeout', 30),
+            'newline' => $this->normalizeNewline((string) ($settings['newline'] ?? "\r\n")),
+            'crlf' => $this->normalizeNewline((string) ($settings['newline'] ?? "\r\n")),
+            'smtp_timeout' => (int) ($settings['timeout'] ?? 30),
         ];
 
-        $encryption = (string) $this->setting('encryption', 'tls');
+        $encryption = (string) ($settings['encryption'] ?? 'tls');
         if (in_array($encryption, ['tls', 'ssl'], true)) {
             $config['smtp_crypto'] = $encryption;
         }
@@ -172,14 +175,17 @@ class SmtpTransport extends AbstractTransport
 
     protected function debugContext(): string
     {
+        $settings = $this->resolvedSmtpSettings($this->settings);
+
         return sprintf(
-            'Mailroom SMTP config: provider=%s host=%s port=%s encryption=%s username=%s timeout=%s<br />',
+            'Mailroom SMTP config: provider=%s source=%s host=%s port=%s encryption=%s username=%s timeout=%s<br />',
             $this->provider(),
-            (string) $this->setting('host', ''),
-            (string) $this->setting('port', ''),
-            (string) $this->setting('encryption', ''),
-            (string) $this->setting('username', '') !== '' ? 'set' : 'blank',
-            (string) $this->setting('timeout', '')
+            (string) $this->setting('config_source', 'manual'),
+            (string) ($settings['host'] ?? ''),
+            (string) ($settings['port'] ?? ''),
+            (string) ($settings['encryption'] ?? ''),
+            (string) ($settings['username'] ?? '') !== '' ? 'set' : 'blank',
+            (string) ($settings['timeout'] ?? '')
         );
     }
 
@@ -223,7 +229,8 @@ class SmtpTransport extends AbstractTransport
             return $configuredFrom;
         }
 
-        $username = trim((string) $this->setting('username', ''));
+        $settings = $this->resolvedSmtpSettings($this->settings);
+        $username = trim((string) ($settings['username'] ?? ''));
         if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
             return $username;
         }
@@ -259,6 +266,52 @@ class SmtpTransport extends AbstractTransport
         }
 
         return trim((string) ($address['email'] ?? $address['address'] ?? $address[0] ?? ''));
+    }
+
+    protected function resolvedSmtpSettings(array $settings): array
+    {
+        if (($settings['config_source'] ?? 'manual') !== 'ee_config') {
+            return [
+                'host' => (string) ($settings['host'] ?? ''),
+                'port' => (string) ($settings['port'] ?? '587'),
+                'encryption' => $this->normalizeEncryption((string) ($settings['encryption'] ?? 'tls')),
+                'username' => (string) ($settings['username'] ?? ''),
+                'password' => (string) ($settings['password'] ?? ''),
+                'timeout' => (string) ($settings['timeout'] ?? '30'),
+                'newline' => (string) ($settings['newline'] ?? "\r\n"),
+            ] + $settings;
+        }
+
+        return [
+            'host' => (string) (ee()->config->item('smtp_server') ?: ee()->config->item('smtp_host') ?: ''),
+            'port' => (string) (ee()->config->item('smtp_port') ?: '587'),
+            'encryption' => $this->normalizeEncryption((string) (ee()->config->item('email_smtp_crypto') ?: ee()->config->item('smtp_crypto') ?: '')),
+            'username' => (string) (ee()->config->item('smtp_username') ?: ee()->config->item('smtp_user') ?: ''),
+            'password' => (string) (ee()->config->item('smtp_password') ?: ee()->config->item('smtp_pass') ?: ''),
+            'timeout' => (string) ($settings['timeout'] ?? '30'),
+            'newline' => (string) (ee()->config->item('email_newline') ?: ee()->config->item('newline') ?: "\r\n"),
+        ] + $settings;
+    }
+
+    protected function normalizeEncryption(string $encryption): string
+    {
+        $encryption = strtolower(trim($encryption));
+
+        if (in_array($encryption, ['tls', 'ssl'], true)) {
+            return $encryption;
+        }
+
+        return 'none';
+    }
+
+    protected function normalizeNewline(string $newline): string
+    {
+        return match ($newline) {
+            '\r\n' => "\r\n",
+            '\n' => "\n",
+            '\r' => "\r",
+            default => $newline,
+        };
     }
 
     private function attach(\EE_Email $email, mixed $attachment): void

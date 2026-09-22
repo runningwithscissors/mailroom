@@ -58,6 +58,7 @@
 
             <fieldset class="form-ctrls">
                 <button class="btn action"><?=lang('save')?></button>
+                <button class="button" type="submit" name="mailroom_action" value="ddev_defaults"><?=lang('mailroom_use_ddev_mailpit_defaults')?></button>
                 <a class="button" href="<?=ee('CP/URL')->make('addons/settings/mailroom/transports')?>"><?=lang('cancel')?></a>
             </fieldset>
         </form>

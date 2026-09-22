@@ -2,8 +2,40 @@
     <div class="panel-body">
         <form action="<?=$action_url?>" method="post">
             <input type="hidden" name="csrf_token" value="<?=CSRF_TOKEN?>">
+            <?php $configSource = (string) ($settings['config_source'] ?? 'manual'); ?>
 
             <fieldset>
+                <div class="field-instruct">
+                    <label for="config_source"><?=lang('mailroom_smtp_config_source')?></label>
+                    <em><?=lang('mailroom_smtp_config_source_desc')?></em>
+                </div>
+                <div class="field-control">
+                    <select id="config_source" name="config_source">
+                        <option value="manual" <?=$configSource === 'manual' ? 'selected' : ''?>><?=lang('mailroom_smtp_config_manual')?></option>
+                        <option value="ee_config" <?=$configSource === 'ee_config' ? 'selected' : ''?>><?=lang('mailroom_smtp_config_ee')?></option>
+                    </select>
+                </div>
+            </fieldset>
+
+            <div class="mailroom-ee-config-preview">
+                <h3><?=lang('mailroom_smtp_ee_config_preview')?></h3>
+                <dl>
+                    <dt><?=lang('mailroom_smtp_host')?></dt>
+                    <dd><?=htmlspecialchars((string) ($ee_config['host'] ?? ''), ENT_QUOTES, 'UTF-8') ?: lang('mailroom_blank')?></dd>
+                    <dt><?=lang('mailroom_smtp_port')?></dt>
+                    <dd><?=htmlspecialchars((string) ($ee_config['port'] ?? ''), ENT_QUOTES, 'UTF-8') ?: lang('mailroom_blank')?></dd>
+                    <dt><?=lang('mailroom_smtp_username')?></dt>
+                    <dd><?=($ee_config['username_set'] ?? false) ? lang('mailroom_set') : lang('mailroom_blank')?></dd>
+                    <dt><?=lang('mailroom_smtp_password')?></dt>
+                    <dd><?=($ee_config['password_set'] ?? false) ? lang('mailroom_set') : lang('mailroom_blank')?></dd>
+                    <dt><?=lang('mailroom_smtp_encryption')?></dt>
+                    <dd><?=htmlspecialchars((string) ($ee_config['encryption'] ?? 'none'), ENT_QUOTES, 'UTF-8')?></dd>
+                    <dt><?=lang('mailroom_email_newline')?></dt>
+                    <dd><?=htmlspecialchars((string) ($ee_config['newline'] ?? '\r\n'), ENT_QUOTES, 'UTF-8')?></dd>
+                </dl>
+            </div>
+
+            <fieldset class="mailroom-manual-smtp-field">
                 <div class="field-instruct">
                     <label for="host"><?=lang('mailroom_smtp_host')?></label>
                 </div>
@@ -12,7 +44,7 @@
                 </div>
             </fieldset>
 
-            <fieldset>
+            <fieldset class="mailroom-manual-smtp-field">
                 <div class="field-instruct">
                     <label for="port"><?=lang('mailroom_smtp_port')?></label>
                 </div>
@@ -21,7 +53,7 @@
                 </div>
             </fieldset>
 
-            <fieldset>
+            <fieldset class="mailroom-manual-smtp-field">
                 <div class="field-instruct">
                     <label for="encryption"><?=lang('mailroom_smtp_encryption')?></label>
                 </div>
@@ -34,7 +66,7 @@
                 </div>
             </fieldset>
 
-            <fieldset>
+            <fieldset class="mailroom-manual-smtp-field">
                 <div class="field-instruct">
                     <label for="username"><?=lang('mailroom_smtp_username')?></label>
                 </div>
@@ -43,7 +75,7 @@
                 </div>
             </fieldset>
 
-            <fieldset>
+            <fieldset class="mailroom-manual-smtp-field">
                 <div class="field-instruct">
                     <label for="smtp_password"><?=lang('mailroom_smtp_password')?></label>
                     <em><?=lang('mailroom_secret_leave_blank')?></em>
@@ -138,6 +170,37 @@
     .mailroom-password-toggle:hover {
         color: #111827;
     }
+
+    .mailroom-ee-config-preview {
+        border: 1px solid #dfe3e6;
+        border-radius: 4px;
+        margin: 0 0 18px;
+        padding: 12px 14px;
+    }
+
+    .mailroom-ee-config-preview h3 {
+        margin-top: 0;
+    }
+
+    .mailroom-ee-config-preview dl {
+        display: grid;
+        grid-template-columns: minmax(120px, 180px) 1fr;
+        gap: 6px 12px;
+        margin: 0;
+    }
+
+    .mailroom-ee-config-preview dt {
+        color: #63717a;
+        font-weight: 600;
+    }
+
+    .mailroom-ee-config-preview dd {
+        margin: 0;
+    }
+
+    .mailroom-manual-smtp-field.is-muted {
+        opacity: 0.55;
+    }
 </style>
 
 <script>
@@ -161,4 +224,20 @@
             button.setAttribute('title', visible ? '<?=addslashes(lang('mailroom_show_password'))?>' : '<?=addslashes(lang('mailroom_hide_password'))?>');
         });
     });
+
+    var mailroomConfigSource = document.getElementById('config_source');
+    var mailroomManualFields = document.querySelectorAll('.mailroom-manual-smtp-field');
+
+    function mailroomSyncConfigSource() {
+        var usesEeConfig = mailroomConfigSource && mailroomConfigSource.value === 'ee_config';
+
+        mailroomManualFields.forEach(function (field) {
+            field.classList.toggle('is-muted', usesEeConfig);
+        });
+    }
+
+    if (mailroomConfigSource) {
+        mailroomConfigSource.addEventListener('change', mailroomSyncConfigSource);
+        mailroomSyncConfigSource();
+    }
 </script>

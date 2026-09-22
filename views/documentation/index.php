@@ -65,34 +65,59 @@
         <p>Mailroom itself does not require ExpressionEngine's Email module for transport tests, logging, diagnostics, or routing core EE email. The sample below uses <code>{exp:email:contact_form}</code>, so that specific form does require the EE Email module to be installed. Third-party form add-ons can still work with Mailroom when they send through EE's email service and trigger the normal email hook.</p>
 
         <h3>Basic EE Contact Form</h3>
-        <pre><code>{exp:email:contact_form
+        <pre><code>&lt;style&gt;
+    .contact-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 24px;
+    }
+
+    .contact-form {
+        width: min(100%, 520px);
+    }
+
+    .contact-form label,
+    .contact-form input,
+    .contact-form textarea {
+        display: block;
+        width: 100%;
+    }
+&lt;/style&gt;
+
+&lt;main class="contact-page"&gt;
+    &lt;div class="contact-form"&gt;
+        {exp:email:contact_form
     recipients="you@example.com"
     return="/contact/thank-you"
     charset="utf-8"
 }
-    &lt;p&gt;
-        &lt;label for="name"&gt;Name&lt;/label&gt;
-        &lt;input id="name" type="text" name="name" required&gt;
-    &lt;/p&gt;
+            &lt;p&gt;
+                &lt;label for="name"&gt;Name&lt;/label&gt;
+                &lt;input id="name" type="text" name="name" required&gt;
+            &lt;/p&gt;
 
-    &lt;p&gt;
-        &lt;label for="from"&gt;Email&lt;/label&gt;
-        &lt;input id="from" type="email" name="from" required&gt;
-    &lt;/p&gt;
+            &lt;p&gt;
+                &lt;label for="from"&gt;Email&lt;/label&gt;
+                &lt;input id="from" type="email" name="from" required&gt;
+            &lt;/p&gt;
 
-    &lt;p&gt;
-        &lt;label for="subject"&gt;Subject&lt;/label&gt;
-        &lt;input id="subject" type="text" name="subject" value="Website inquiry" required&gt;
-    &lt;/p&gt;
+            &lt;p&gt;
+                &lt;label for="subject"&gt;Subject&lt;/label&gt;
+                &lt;input id="subject" type="text" name="subject" value="Website inquiry" required&gt;
+            &lt;/p&gt;
 
-    &lt;p&gt;
-        &lt;label for="message"&gt;Message&lt;/label&gt;
-        &lt;textarea id="message" name="message" rows="8" required&gt;&lt;/textarea&gt;
-    &lt;/p&gt;
+            &lt;p&gt;
+                &lt;label for="message"&gt;Message&lt;/label&gt;
+                &lt;textarea id="message" name="message" rows="8" required&gt;&lt;/textarea&gt;
+            &lt;/p&gt;
 
-    &lt;input type="hidden" name="required" value="name|from|subject|message"&gt;
-    &lt;button type="submit"&gt;Send&lt;/button&gt;
-{/exp:email:contact_form}</code></pre>
+            &lt;input type="hidden" name="required" value="name|from|subject|message"&gt;
+            &lt;button type="submit"&gt;Send&lt;/button&gt;
+        {/exp:email:contact_form}
+    &lt;/div&gt;
+&lt;/main&gt;</code></pre>
 
         <p>After submission, check <a href="<?=$logs_url?>">Email Log</a>. If nothing appears, confirm routing is enabled in Settings and the email hook passes in Diagnostics.</p>
     </div>
@@ -106,17 +131,29 @@
         <h3>Mailpit / Dev Capture</h3>
         <ol>
             <li>Enable Mailpit / Dev Capture in Transports.</li>
-            <li>Set the host and port. For local DDEV this is usually <code>127.0.0.1</code> and <code>1025</code>.</li>
+            <li>For local DDEV, click Use DDEV Mailpit defaults or set the host to <code>127.0.0.1</code>, port to <code>1025</code>, TLS off, and username/password blank.</li>
             <li>Use this for local testing when you want to capture mail without delivering it to real recipients.</li>
         </ol>
 
         <h3>Generic SMTP</h3>
         <ol>
-            <li>Enter the SMTP host, port, encryption, username, and password provided by the mailbox host.</li>
+            <li>Choose Manual Mailroom settings when you want Mailroom to store the SMTP host, port, encryption, username, and password provided by the mailbox host.</li>
+            <li>Choose ExpressionEngine email config when an existing <code>.env.php</code> or environment-specific config file already feeds SMTP values into ExpressionEngine's email config.</li>
+            <li>When using ExpressionEngine email config, keep the existing <code>.env.php</code> and <code>config.php</code> setup in place. Mailroom reads the resolved config values at send time and does not copy the SMTP password into Mailroom settings.</li>
             <li>Set Default From Email to the authenticated mailbox or an address that provider explicitly allows that mailbox to send as.</li>
             <li>Use port <code>587</code> with TLS or port <code>465</code> with SSL depending on the provider instructions.</li>
             <li>If the provider says the sender is not owned by the user, the From address does not match the authenticated SMTP account or an approved alias.</li>
         </ol>
+
+        <h3>Existing ExpressionEngine SMTP Config</h3>
+        <p>For sites already configured with ExpressionEngine email settings, Generic SMTP can read these config values directly:</p>
+        <pre><code>$config['smtp_server']
+$config['smtp_port']
+$config['smtp_username']
+$config['smtp_password']
+$config['email_smtp_crypto']
+$config['email_newline']</code></pre>
+        <p>This is useful for production or staging sites that already send through providers such as Mailgun. Local DDEV sites that use Mailpit should usually use Mailpit / Dev Capture instead, because local EE config may use <code>mail</code> protocol with blank SMTP fields.</p>
 
         <h3>Microsoft 365 Graph</h3>
         <ol>
@@ -186,6 +223,8 @@
         <ul>
             <li>If transport tests work but forms do not log, make sure Route ExpressionEngine email through Mailroom is enabled and Diagnostics shows the email hook passing.</li>
             <li>If the default transport dropdown is empty, enable at least one transport on the Transports screen.</li>
+            <li>If the Generic SMTP ExpressionEngine config preview is blank, confirm the site's config file sets ExpressionEngine's SMTP config keys after loading environment values.</li>
+            <li>If local DDEV mail is not appearing in Mailpit, use the Mailpit / Dev Capture transport with DDEV defaults instead of Generic SMTP.</li>
             <li>If SMTP rejects the sender, align the From address with the authenticated SMTP user or an approved alias.</li>
             <li>If Microsoft Graph fails with an auth error, recheck tenant ID, client ID, client secret, app permissions, and admin consent.</li>
             <li>If Google fails with <code>unauthorized_client</code> or <code>invalid_grant</code>, recheck domain-wide delegation, the numeric Client ID, the Gmail scope, and the delegated sender mailbox.</li>
