@@ -5,7 +5,7 @@ return [
     'author_url'     => 'https://gobison.digital',
     'name'           => 'Mailroom',
     'description'    => 'Transactional email delivery, logging, retry, and diagnostics for ExpressionEngine.',
-    'version'        => '1.0.0',
+    'version'        => '1.1.0',
     'namespace'      => 'BisonDigital\Mailroom',
     'settings_exist' => true,
 

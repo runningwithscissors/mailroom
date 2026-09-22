@@ -13,6 +13,7 @@ require_once __DIR__ . '/src/Services/EventService.php';
 require_once __DIR__ . '/src/Services/MailerService.php';
 require_once __DIR__ . '/src/Services/SettingsService.php';
 require_once __DIR__ . '/src/Services/ExtensionHookService.php';
+require_once __DIR__ . '/src/Services/LicenseGrace.php';
 require_once __DIR__ . '/src/Services/TransportFactory.php';
 require_once __DIR__ . '/src/Services/TransportRepository.php';
 require_once __DIR__ . '/src/Services/Auth/OAuthClient.php';
@@ -28,7 +29,7 @@ require_once __DIR__ . '/src/Transports/GoogleGmailTransport.php';
 class Mailroom_mcp
 {
     private string $baseUrl;
-    private const VERSION = '1.0.0';
+    private const VERSION = '1.1.0';
 
     public function __construct()
     {
@@ -78,7 +79,7 @@ class Mailroom_mcp
             'breadcrumb' => [
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
             ],
-            'body' => ee('View')->make('mailroom:dashboard')->render($vars),
+            'body' => $this->licenseNotice() . ee('View')->make('mailroom:dashboard')->render($vars),
         ];
     }
 
@@ -112,7 +113,7 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:logs/index')->render([
+            'body' => $this->licenseNotice() . $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:logs/index')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/logs'),
                 'logs' => $logs->latest(),
                 'settings' => $settings->all(),
@@ -164,7 +165,7 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/index')->render([
+            'body' => $this->licenseNotice() . $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/index')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/transports'),
                 'transports' => $repository->all(),
                 'default_transport' => (string) $settings->get('default_transport', ''),
@@ -188,7 +189,7 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:diagnostics/index')->render([
+            'body' => $this->licenseNotice() . $this->noticeHtml($notice) . ee('View')->make('mailroom:diagnostics/index')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/diagnostics'),
                 'checks' => $this->diagnosticChecks(),
             ]),
@@ -238,7 +239,7 @@ class Mailroom_mcp
                 $this->baseUrl => lang('mailroom_module_name'),
                 ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
             ],
-            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/smtp')->render([
+            'body' => $this->licenseNotice() . $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/smtp')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/smtp'),
                 'settings' => $repository->settingsFor('smtp'),
                 'ee_config' => $this->smtpConfigPreview(),
@@ -284,7 +285,7 @@ class Mailroom_mcp
                 $this->baseUrl => lang('mailroom_module_name'),
                 ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
             ],
-            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/dev_capture')->render([
+            'body' => $this->licenseNotice() . $this->noticeHtml($notice) . ee('View')->make('mailroom:transports/dev_capture')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/dev_capture'),
                 'settings' => $repository->settingsFor('mailpit'),
             ]),
@@ -377,7 +378,7 @@ class Mailroom_mcp
                 $this->baseUrl => lang('mailroom_module_name'),
                 ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
             ],
-            'body' => $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:transports/microsoft_graph')->render([
+            'body' => $this->licenseNotice() . $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:transports/microsoft_graph')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/microsoft_graph'),
                 'settings' => $repository->settingsFor('microsoft_graph'),
             ]),
@@ -450,7 +451,7 @@ class Mailroom_mcp
                 $this->baseUrl => lang('mailroom_module_name'),
                 ee('CP/URL')->make('addons/settings/mailroom/transports')->compile() => lang('mailroom_nav_transports'),
             ],
-            'body' => $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:transports/google_gmail')->render([
+            'body' => $this->licenseNotice() . $this->noticeHtml($notice, $noticeType) . ee('View')->make('mailroom:transports/google_gmail')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/google_gmail'),
                 'settings' => $repository->settingsFor('google_gmail'),
             ]),
@@ -512,7 +513,7 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => $this->noticeHtml($notice) . ee('View')->make('mailroom:settings/index')->render([
+            'body' => $this->licenseNotice() . $this->noticeHtml($notice) . ee('View')->make('mailroom:settings/index')->render([
                 'action_url' => ee('CP/URL')->make('addons/settings/mailroom/settings'),
                 'settings' => $settings->all(),
                 'transport_choices' => $repository->enabledChoices(),
@@ -531,7 +532,7 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => ee('View')->make('mailroom:documentation/index')->render([
+            'body' => $this->licenseNotice() . ee('View')->make('mailroom:documentation/index')->render([
                 'settings_url' => ee('CP/URL')->make('addons/settings/mailroom/settings'),
                 'transports_url' => ee('CP/URL')->make('addons/settings/mailroom/transports'),
                 'diagnostics_url' => ee('CP/URL')->make('addons/settings/mailroom/diagnostics'),
@@ -550,7 +551,7 @@ class Mailroom_mcp
                 ee('CP/URL')->make('addons')->compile() => lang('addons_module_name'),
                 $this->baseUrl => lang('mailroom_module_name'),
             ],
-            'body' => ee('View')->make('mailroom:placeholder')->render([
+            'body' => $this->licenseNotice() . ee('View')->make('mailroom:placeholder')->render([
                 'message' => lang($messageKey),
             ]),
         ];
@@ -566,16 +567,29 @@ class Mailroom_mcp
         (new \BisonDigital\Mailroom\Services\ExtensionHookService())->ensureEmailHook(self::VERSION);
     }
 
+    /**
+     * Licence notice for the top of every CP page, or '' when licensed.
+     *
+     * Informational only: nothing in Mailroom is disabled on a licence state, and mail keeps
+     * routing. See src/Services/LicenseGrace.php for why.
+     */
+    private function licenseNotice(): string
+    {
+        return $this->noticeHtml((new \BisonDigital\Mailroom\Services\LicenseGrace('mailroom', 'Mailroom'))->notice(), 'warning');
+    }
+
     private function noticeHtml(string $message, string $type = 'success'): string
     {
         if ($message === '') {
             return '';
         }
 
-        $class = $type === 'issue' ? 'mailroom-notice mailroom-notice--issue' : 'mailroom-notice mailroom-notice--success';
-        $style = $type === 'issue'
-            ? 'margin:0 0 16px;padding:12px 14px;border-radius:4px;border:1px solid #f0c2c2;background:#fff2f2;color:#8f2626;'
-            : 'margin:0 0 16px;padding:12px 14px;border-radius:4px;border:1px solid #b7dec2;background:#effaf2;color:#1f6b33;';
+        $class = 'mailroom-notice mailroom-notice--' . (in_array($type, ['issue', 'warning'], true) ? $type : 'success');
+        $style = match ($type) {
+            'issue' => 'margin:0 0 16px;padding:12px 14px;border-radius:4px;border:1px solid #f0c2c2;background:#fff2f2;color:#8f2626;',
+            'warning' => 'margin:0 0 16px;padding:12px 14px;border-radius:4px;border:1px solid #ecd9a3;background:#fff9e8;color:#7a5a00;',
+            default => 'margin:0 0 16px;padding:12px 14px;border-radius:4px;border:1px solid #b7dec2;background:#effaf2;color:#1f6b33;',
+        };
 
         return '<div class="' . $class . '" style="' . $style . '">' . nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8')) . '</div>';
     }

@@ -2,10 +2,14 @@
 
 All notable changes to Mailroom will be documented in this file.
 
-## Unreleased
+## 1.1.0 - 2026-09-22
 
 ### Added
 
+- Added Bison's shared `LicenseGrace` licence notice to every Mailroom Control Panel page. When ExpressionEngine reports Mailroom's own licence as `invalid` or `expired`, a notice counts down a 7-day grace period from the first time the problem is seen, then settles into a firmer message. It never disables anything: mail keeps routing, and every screen still saves, because the person who can fix a billing problem is rarely the one reading the notice, and email that stops sending costs far more than the licence does.
+- The grace clock resets as soon as the licence is valid again, so a site that lapses at renewal time next year gets the full week again. The clock is stored in ExpressionEngine's own `exp_config` table, so no migration is needed.
+- EE core licence statuses (`missing_license_key`, `license_expired`, `update_available` and so on) are deliberately ignored. They describe the ExpressionEngine install, not Mailroom. Development hosts (`.ddev.site`, `.test`, `.local`, `localhost`) never see the notice.
+- Mailroom is not yet an ExpressionEngine store product, so EE reports `na` and the notice stays silent for now. This release adds the mechanism, which starts showing notices once Mailroom is sold through the store.
 - Added a Generic SMTP configuration source option that can read existing ExpressionEngine email config values at send time.
 - Added a read-only Generic SMTP preview of resolved ExpressionEngine email config values without exposing passwords.
 - Added a Mailpit / Dev Capture action for saving DDEV Mailpit defaults.

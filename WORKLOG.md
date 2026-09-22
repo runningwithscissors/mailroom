@@ -52,6 +52,13 @@ Update this file after completed work sessions so a restarted assistant or devel
 - Added a Mailroom Documentation CP page covering installation, configuration, usage, transports, logging/privacy, webhook scaffolding, and troubleshooting.
 - Removed stale scaffold-era Foundation Status and Next Steps panels from the dashboard.
 
+## 2026-09-22
+
+- Added `1.1.0` Generic SMTP option to read ExpressionEngine's own email config at send time, a read-only preview of the resolved values, and a Use DDEV Mailpit defaults button.
+- Ported Bison's shared `LicenseGrace` from Mason 1.16.0 to `src/Services/LicenseGrace.php`, changing only the namespace (`BisonDigital\Mailroom\Services`). It is loaded with the same `require_once` pattern `mcp.mailroom.php` uses for its other classes, and every CP page body is prefixed with `licenseNotice()`.
+- The notice is informational only. Do not gate sending or saving on licence state (see the class docblock). Owner domains go in `bison_licensed_domains` in site config; keep that out of customer docs.
+- Verified the grace-state behavior table from the porting guide with a mocked `ee()` harness; all cases pass.
+
 ## Current Push Commands
 
 ```bash
